@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./src/config/db");
 
+
+
 const app = express();
 
 // Connexion DB
@@ -11,6 +13,14 @@ connectDB();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+//API
+const authRoutes = require("./src/routes/authRoutes");
+const fournisseurRoutes = require('./src/routes/fournisseurRoutes');
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/fournisseurs", fournisseurRoutes);
 
 // Route test
 app.get("/", (req, res) => {
