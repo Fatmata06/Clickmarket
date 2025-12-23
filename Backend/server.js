@@ -13,6 +13,8 @@ connectDB();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 //API
 const authRoutes = require("./src/routes/authRoutes");
