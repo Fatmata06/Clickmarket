@@ -19,9 +19,9 @@ const userSchema = new mongoose.Schema({
 }, options);
 
 // Hash du mot de passe avant sauvegarde
-userSchema.pre('save', async function() {
-  if (!this.isModified('motDePasse')) return;
-  this.motDePasse = await bcrypt.hash(this.motDePasse, 10);
-});
+// userSchema.pre('save', async function() {
+//   if (!this.isModified('motDePasse')) return;
+//   this.motDePasse = await bcrypt.hash(this.motDePasse, 10);
+// });
 
 module.exports = mongoose.model('User', userSchema);

@@ -8,7 +8,7 @@ exports.register = async (req, res) => {
   try {
     const { nom, prenom, email, motDePasse, role } = req.body;
 
-    console.log("BODY RECU:", req.body);
+    // console.log("BODY RECU:", req.body);
 
     if (!motDePasse) {
       return res.status(400).json({ message: "Le mot de passe est requis" });
@@ -26,7 +26,7 @@ exports.register = async (req, res) => {
       prenom,
       email,
       motDePasse: hashedMotDePasse,
-      role: role || "client",
+      role: "client",
       dateCreation: new Date(),
     });
 
@@ -35,7 +35,7 @@ exports.register = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role, email: user.email, prenom: user.prenom },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1d" }
     );
 
     res.status(201).json({
@@ -54,6 +54,8 @@ exports.login = async (req, res) => {
   try {
     const { email, motDePasse } = req.body;
 
+    // console.log("LOGIN BODY RECU:", req.body);
+
     if (!email || !motDePasse) {
       return res.status(400).json({ message: "Email et mot de passe requis" });
     }
@@ -64,6 +66,8 @@ exports.login = async (req, res) => {
     if (user.bloque) {
       return res.status(403).json({ message: "Votre compte a été bloqué. Contactez l'administrateur." });
     }
+
+    // console.log("USER TROUVE:", user);
 
     const isValid = await bcrypt.compare(motDePasse, user.motDePasse);
     if (!isValid) return res.status(401).json({ message: "Mot de passe incorrect" });

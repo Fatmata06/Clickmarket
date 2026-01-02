@@ -13,6 +13,11 @@ exports.registerFournisseur = async (req, res) => {
     const exist = await Fournisseur.findOne({ email });
     if (exist) return res.status(400).json({ message: "Email déjà utilisé" });
 
+    // Vérifier que tous les champs sont remplis
+    if (!nom || !prenom || !email || !motDePasse || !nomEntreprise || !numeroEntreprise || !localisationEntreprise) {
+      return res.status(400).json({ message: "Tous les champs sont requis" });
+    }
+
     // Hash du mot de passe
     const hashed = await bcrypt.hash(motDePasse, 10);
 
