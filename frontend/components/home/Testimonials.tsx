@@ -61,7 +61,7 @@ export default function Testimonials() {
                     />
                   ))}
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 mb-6 italic">{testimonial.content}</p>
+                <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 mb-6 italic">{testimonial.content}</p>
                 <div className="flex items-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
                     <Image
@@ -73,7 +73,7 @@ export default function Testimonials() {
                     />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 dark:text-white">{testimonial.name}</h4>
+                    <h4 className="text-md md:text-lg font-bold text-gray-900 dark:text-white">{testimonial.name}</h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}</p>
                   </div>
                 </div>

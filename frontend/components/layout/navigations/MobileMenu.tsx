@@ -72,8 +72,8 @@ export default function MobileMenu() {
         </Button>
       </SheetTrigger>
       <SheetContent
-        side="left"
-        className="w-full sm:w-[350px] p-0 flex flex-col"
+        side="right"
+        className="p-0 flex flex-col"
       >
         <SheetHeader className="px-6 py-4 border-b">
           <SheetTitle>Menu</SheetTitle>
@@ -105,7 +105,7 @@ export default function MobileMenu() {
                   <Link href={item.href}>
                     <Button
                       variant="ghost"
-                      className={"w-full justify-start text-sm" + (pathname === item.href ? " font-semibold text-green-600 dark:text-green-400 border-l-4 border-green-600 dark:border-green-400" : "")}
+                      className={"cursor-pointer w-full hover:bg-green-600 hover:text-white dark:hover:bg-white dark:hover:bg-green-400 dark:hover:text-white justify-start text-sm" + (pathname === item.href ? " font-semibold text-green-600 dark:text-green-400 border-l-4 border-green-600 dark:border-green-400" : "")}
                     >
                       {item.name}
                     </Button>
@@ -202,7 +202,7 @@ export default function MobileMenu() {
                   <Link href="/login" className="block">
                     <Button
                       variant="outline"
-                      className="w-full justify-start text-sm"
+                      className="cursor-pointer w-full justify-start text-sm font-semibold hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900"
                     >
                       <LogIn className="h-4 w-4 mr-2" />
                       Se connecter
@@ -213,7 +213,7 @@ export default function MobileMenu() {
                   <Link href="/register" className="block">
                     <Button
                       variant="outline"
-                      className="w-full justify-start text-sm"
+                      className="cursor-pointer w-full justify-start text-sm font-semibold hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
                       S&apos;inscrire

@@ -9,11 +9,11 @@ import CategoriesSection from "@/components/home/CategoriesSection";
 import WhyChooseUs from "@/components/home/WhyChooseUs";
 import Testimonials from "@/components/home/Testimonials";
 import HowItWorks from "@/components/home/HowItWorks";
-import Newsletter from "@/components/home/Newsletter";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import CallToActionSection from "@/components/home/CallToActionSection";
 
 export default function HomePage() {
-  const { isAuthenticated, hasRole, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -84,9 +84,15 @@ export default function HomePage() {
       </section>
 
       {/* Newsletter */}
-      <section className="py-16">
+      {/* <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Newsletter />
+        </div>
+      </section> */}
+
+      <section className="py-4 bg-green-50 dark:bg-gray-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <CallToActionSection />
         </div>
       </section>
     </main>

@@ -19,10 +19,12 @@ app.use(express.urlencoded({ extended: true }));
 //API
 const authRoutes = require("./src/routes/authRoutes");
 const fournisseurRoutes = require('./src/routes/fournisseurRoutes');
+const produitRoutes = require('./src/routes/produitRoutes');
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/fournisseurs", fournisseurRoutes);
+app.use("/api/produits", produitRoutes);
 
 // Route test
 app.get("/", (req, res) => {

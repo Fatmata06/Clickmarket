@@ -2,24 +2,34 @@ const jwt = require("jsonwebtoken");
 const Utilisateur = require("../models/User");
 
 exports.auth = async (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
+  }
+
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Token manquant" });
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await Utilisateur.findById(decoded.id).select("-password");
+   // req.user = decoded; // Ajoute l'utilisateur décodé à la requête
 
-    next();
-  } catch {
-    res.status(401).json({ message: "Token invalide" });
+    req.user = {
+      id: decoded.userId,
+      role: decoded.role,
+      email: decoded.email,
+      nom: decoded.nom,
+      prenom: decoded.prenom
+    };
+    next();  // Passe au middleware suivant
+  } catch (err) {
+    res.status(400).json({ message: 'Token invalide.' });
   }
 };
 
-exports.isRole = (...roles) => {
+exports.isRole = (allowedRoles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role))
-      return res.status(403).json({ message: "Accès refusé" });
-
-    next();
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Accès refusé. Rôle non autorisé." });
+    }
+    next(); // L'utilisateur a le bon rôle, on continue la route
   };
 };

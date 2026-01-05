@@ -30,6 +30,20 @@ export default function CartSheet() {
       quantity: 1,
       image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=80&q=80",
     },
+    {
+      id: 3,
+      name: "Produit 3",
+      price: 10000,
+      quantity: 3,
+      image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=80&q=80",
+    },
+    {
+      id: 4,
+      name: "Produit 4",
+      price: 20000,
+      quantity: 1,
+      image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=80&q=80",
+    }
   ];
 
   const subtotal = cartItems.reduce(

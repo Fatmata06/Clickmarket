@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react'
-// import { Input } from '@/components/ui/input'
-// import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
 export default function Footer() {
   return (
     <footer className="dark:border-t dark:border-gray-800 bg-gray-900 dark:bg-gray-950 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Logo et description */}
           <div>
             
@@ -75,22 +75,22 @@ export default function Footer() {
           </div>
 
           {/* Newsletter */}
-          {/* <div>
+          <div>
             <h3 className="text-lg font-semibold text-white mb-4">Newsletter</h3>
             <p className="text-gray-400 mb-4">
               Inscrivez-vous pour recevoir nos offres spéciales
             </p>
-            <div className="flex">
+            <div className="flex sm:flex-col xl:flex-row gap-2">
               <Input
                 type="email"
                 placeholder="Votre email"
                 className="bg-gray-800 border-gray-700 text-white"
               />
-              <Button className="ml-2 bg-green-600 hover:bg-green-700">
+              <Button className="bg-green-600 hover:bg-green-700">
                 S&apos;inscrire
               </Button>
             </div>
-          </div> */}
+          </div>
         </div>
 
         {/* Divider */}

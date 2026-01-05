@@ -34,7 +34,7 @@ export default function HowItWorks() {
         Comment ça <span className="text-green-600 dark:text-green-400">fonctionne</span>
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
         {steps.map((step, index) => (
           <motion.div
             key={index}
@@ -43,17 +43,17 @@ export default function HowItWorks() {
             transition={{ duration: 0.5, delay: index * 0.1 }}
           >
             <Card className="border-0 shadow-lg hover:shadow-xl dark:shadow-gray-900/50 transition-all duration-300 h-full dark:bg-gray-800 dark:border-gray-700">
-              <CardContent className="p-6 text-center">
+              <CardContent className="p-2 sm:p-6 text-center">
                 <div className="relative mb-6">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
                     {step.icon}
                   </div>
                   <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-600 dark:bg-green-700 text-white rounded-full flex items-center justify-center font-bold">
                     {index + 1}
                   </div>
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{step.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300">{step.description}</p>
+                <h3 className="text-md sm:text-lg md:text-xl font-bold mb-3 text-gray-900 dark:text-white">{step.title}</h3>
+                <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300">{step.description}</p>
               </CardContent>
             </Card>
           </motion.div>

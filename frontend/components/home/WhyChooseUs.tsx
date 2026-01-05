@@ -34,7 +34,7 @@ export default function WhyChooseUs() {
         Pourquoi choisir <span className="text-green-600 dark:text-green-400">ClickMarket</span>
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
         {features.map((feature, index) => (
           <motion.div
             key={index}
@@ -44,12 +44,12 @@ export default function WhyChooseUs() {
             whileHover={{ scale: 1.05 }}
           >
             <Card className="border-0 shadow-lg hover:shadow-xl dark:shadow-gray-900/50 transition-all duration-300 h-full dark:bg-gray-800 dark:border-gray-700">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
+              <CardContent className="p-2 sm:p-6 text-center">
+                <div className="w-10 sm:w-16 h-10 sm:h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{feature.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
+                <h3 className="text-sm sm:text-base md:text-lg font-bold mb-3 text-gray-900 dark:text-white">{feature.title}</h3>
+                <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300">{feature.description}</p>
               </CardContent>
             </Card>
           </motion.div>
