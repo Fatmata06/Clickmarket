@@ -124,11 +124,11 @@ exports.ajouterArticle = async (req, res) => {
     if (produit.stock < quantite)
       return res.status(400).json({ message: "Stock insuffisant" });
 
-    const userId = req.user?.id || null;
+    const userId = req.user?._id || null;
     // Si userId existe, ignorer sessionId
     const sessionId = userId
       ? null
-      : req.cookies.cartSessionId || req.headers["x-session-id"];
+      : req.sessionId || req.cookies.cartSessionId;
 
     let panier = await getOrCreatePanier(userId, sessionId);
 
@@ -176,11 +176,11 @@ exports.modifierArticle = async (req, res) => {
       });
     }
 
-    const userId = req.user?.id || null;
+    const userId = req.user?._id || null;
     // Si userId existe, ignorer sessionId
     const sessionId = userId
       ? null
-      : req.cookies.cartSessionId || req.headers["x-session-id"];
+      : req.sessionId || req.cookies.cartSessionId;
 
     const panier = await getOrCreatePanier(userId, sessionId);
 
@@ -228,7 +228,7 @@ exports.supprimerArticle = async (req, res) => {
   try {
     const { articleId } = req.params;
 
-    const userId = req.user?.id || null;
+    const userId = req.user?._id || null;
     // Si userId existe, ignorer sessionId
     const sessionId = userId
       ? null
@@ -261,7 +261,7 @@ exports.supprimerArticle = async (req, res) => {
 // /api/panier/vider - Vider le panier
 exports.viderPanier = async (req, res) => {
   try {
-    const userId = req.user?.id || null;
+    const userId = req.user?._id || null;
     // Si userId existe, ignorer sessionId
     const sessionId = userId
       ? null
@@ -285,7 +285,7 @@ exports.viderPanier = async (req, res) => {
 exports.mergePanierAfterLogin = async (req, res) => {
   try {
     const sessionId = req.body.sessionId || req.cookies.cartSessionId;
-    const userId = req.user?.id;
+    const userId = req.user?._id;
 
     if (!sessionId || !userId) {
       return res.status(400).json({

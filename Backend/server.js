@@ -28,10 +28,17 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware pour générer sessionId si absent
 app.use((req, res, next) => {
-  if (!req.cookies.cartSessionId && !req.user) {
+  const existingSessionId = req.cookies.cartSessionId;
+
+  if (existingSessionId) {
+    req.sessionId = existingSessionId;
+  } else if (!req.user) {
+    // Créer un sessionId seulement pour les utilisateurs non authentifiés
     const sessionId = uuidv4();
     res.cookie("cartSessionId", sessionId, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 jours
     });
     req.sessionId = sessionId;
