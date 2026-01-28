@@ -32,6 +32,7 @@ export interface CartResponse {
 // Récupérer le panier
 export async function getCart(): Promise<CartResponse> {
   const token = localStorage.getItem("token");
+  const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -41,11 +42,21 @@ export async function getCart(): Promise<CartResponse> {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  if (sessionId) {
+    headers["X-Session-ID"] = sessionId;
+  }
+
   const response = await fetch(`${API_URL}/panier`, {
     method: "GET",
     headers,
     credentials: "include", // Important pour les cookies de session
   });
+
+  // Stocker le sessionId retourné par le serveur
+  const newSessionId = response.headers.get("X-Session-ID");
+  if (newSessionId && !token) {
+    localStorage.setItem("cartSessionId", newSessionId);
+  }
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
@@ -60,6 +71,7 @@ export async function addToCart(
   quantite: number = 1,
 ): Promise<{ panier: Cart; message: string }> {
   const token = localStorage.getItem("token");
+  const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -69,12 +81,22 @@ export async function addToCart(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  if (sessionId) {
+    headers["X-Session-ID"] = sessionId;
+  }
+
   const response = await fetch(`${API_URL}/panier/article`, {
     method: "POST",
     headers,
     credentials: "include",
     body: JSON.stringify({ produitId, quantite }),
   });
+
+  // Stocker le sessionId retourné par le serveur
+  const newSessionId = response.headers.get("X-Session-ID");
+  if (newSessionId && !token) {
+    localStorage.setItem("cartSessionId", newSessionId);
+  }
 
   if (!response.ok) {
     const error = await response.json();
@@ -90,6 +112,7 @@ export async function updateCartItem(
   quantite: number,
 ): Promise<{ panier: Cart; message: string }> {
   const token = localStorage.getItem("token");
+  const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -97,6 +120,10 @@ export async function updateCartItem(
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (sessionId) {
+    headers["X-Session-ID"] = sessionId;
   }
 
   const response = await fetch(`${API_URL}/panier/article/${articleId}`, {
@@ -119,6 +146,7 @@ export async function removeFromCart(
   articleId: string,
 ): Promise<{ panier: Cart; message: string }> {
   const token = localStorage.getItem("token");
+  const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -126,6 +154,10 @@ export async function removeFromCart(
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (sessionId) {
+    headers["X-Session-ID"] = sessionId;
   }
 
   const response = await fetch(`${API_URL}/panier/article/${articleId}`, {
@@ -145,6 +177,7 @@ export async function removeFromCart(
 // Vider le panier
 export async function clearCart(): Promise<{ message: string }> {
   const token = localStorage.getItem("token");
+  const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -152,6 +185,10 @@ export async function clearCart(): Promise<{ message: string }> {
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (sessionId) {
+    headers["X-Session-ID"] = sessionId;
   }
 
   const response = await fetch(`${API_URL}/panier/vider`, {

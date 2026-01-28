@@ -26,21 +26,22 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware pour générer sessionId si absent
+// Middleware pour gérer sessionId (depuis header pour cross-origin)
 app.use((req, res, next) => {
-  const existingSessionId = req.cookies.cartSessionId;
+  // Priorité au header X-Session-ID (pour cross-origin)
+  const headerSessionId = req.headers["x-session-id"];
+  // Fallback sur cookie (pour same-origin)
+  const cookieSessionId = req.cookies.cartSessionId;
+
+  const existingSessionId = headerSessionId || cookieSessionId;
 
   if (existingSessionId) {
     req.sessionId = existingSessionId;
   } else if (!req.user) {
-    // Créer un sessionId seulement pour les utilisateurs non authentifiés
+    // Créer un nouveau sessionId
     const sessionId = uuidv4();
-    res.cookie("cartSessionId", sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 jours
-    });
+    // Retourner le sessionId dans le header de réponse
+    res.setHeader("X-Session-ID", sessionId);
     req.sessionId = sessionId;
   }
   next();

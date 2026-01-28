@@ -116,6 +116,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       persist(data.token, nextUser);
 
+      // Nettoyer le sessionId du panier invité lors de la connexion
+      localStorage.removeItem("cartSessionId");
+
       return nextUser;
     } catch (err) {
       const message =
@@ -133,6 +136,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setError(null);
     persist(null, null);
+    // Ne PAS nettoyer le sessionId lors de la déconnexion pour garder le panier
   }, []);
 
   // Register function
