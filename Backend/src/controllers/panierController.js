@@ -184,10 +184,17 @@ exports.modifierArticle = async (req, res) => {
 
     const panier = await getOrCreatePanier(userId, sessionId);
 
-    const article = panier.articles.id(articleId);
-    if (!article) {
+    // Convertir articleId en ObjectId pour une comparaison correcte
+    const articleObjectId = new mongoose.Types.ObjectId(articleId);
+    const articleIndex = panier.articles.findIndex((a) =>
+      a._id.equals(articleObjectId),
+    );
+
+    if (articleIndex === -1) {
       return res.status(404).json({ message: "Article introuvable" });
     }
+
+    const article = panier.articles[articleIndex];
 
     // 🔹 Modifier le produit si fourni
     if (produitId) {
@@ -236,12 +243,17 @@ exports.supprimerArticle = async (req, res) => {
 
     const panier = await getOrCreatePanier(userId, sessionId);
 
-    const article = panier.articles.id(articleId);
-    if (!article) {
+    // Convertir articleId en ObjectId pour une comparaison correcte
+    const articleObjectId = new mongoose.Types.ObjectId(articleId);
+    const articleIndex = panier.articles.findIndex((a) =>
+      a._id.equals(articleObjectId),
+    );
+
+    if (articleIndex === -1) {
       return res.status(404).json({ message: "Article introuvable" });
     }
 
-    article.deleteOne(); // ✅ suppression propre
+    panier.articles.splice(articleIndex, 1);
 
     await panier.save();
     await panier.populate("articles.produit");
