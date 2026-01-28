@@ -47,3 +47,11 @@ npm run lint
 
 - Le backend doit être démarré et accessible via `NEXT_PUBLIC_API_URL`.
 - Les pages protégées se trouvent dans `app/(protected)`.
+
+## Déploiement sur Vercel
+
+1. Pousser le code vers GitHub
+2. Connecter le repo à Vercel
+3. Définir les variables d'environnement :
+   - `NEXT_PUBLIC_API_URL=https://clickmarche.onrender.com/api`
+4. La production est accessible à `https://clickmarche.vercel.app`

@@ -11,12 +11,20 @@ const options = {
     },
     servers: [
       {
+        url: "https://clickmarche.onrender.com",
+        description: "Production Server",
+      },
+      {
+        url: "https://clickmarche.onrender.com/api",
+        description: "Production API Server",
+      },
+      {
         url: "http://localhost:5000",
         description: "Development Server",
       },
       {
         url: "http://localhost:5000/api",
-        description: "API Server",
+        description: "Development API Server",
       },
     ],
     components: {

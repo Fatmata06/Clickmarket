@@ -51,3 +51,11 @@ npm run dev
 
 - La base MongoDB doit être accessible via `MONGODB_URI`.
 - Le CORS est configuré pour `CLIENT_URL`.
+
+## Déploiement sur Render
+
+1. Pousser le code vers GitHub
+2. Connecter le repo à Render.com
+3. Créer un service Web
+4. Définir les variables d'environnement dans Render
+5. La production est accessible à `https://clickmarche.onrender.com`
