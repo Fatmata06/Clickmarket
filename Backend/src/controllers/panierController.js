@@ -6,13 +6,18 @@ const mongoose = require("mongoose");
 const enrichirPanierAvecTotaux = (panier) => {
   if (!panier || !panier.articles) return panier;
 
-  // Ajouter le total à chaque article
-  panier.articles = panier.articles.map((article) => ({
-    ...(article.toObject ? article.toObject() : article),
-    total: article.quantite * article.prixUnitaire,
-  }));
+  // Convertir le panier complet en objet AVANT de mapper (préserve les données populées)
+  const panierObj = panier.toObject ? panier.toObject() : panier;
 
-  return panier;
+  // PUIS ajouter le total à chaque article
+  if (panierObj.articles) {
+    panierObj.articles = panierObj.articles.map((article) => ({
+      ...article,
+      total: article.quantite * article.prixUnitaire,
+    }));
+  }
+
+  return panierObj;
 };
 
 // @desc    Récupérer ou créer un panier
