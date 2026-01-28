@@ -57,24 +57,27 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        const parsed = JSON.parse(saved) as { token?: string };
-        // setUser(parsed.user ?? null);
+        const parsed = JSON.parse(saved) as { user?: User; token?: string };
+        setUser(parsed.user ?? null);
         setToken(parsed.token ?? null);
       } catch {
-        sessionStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEY);
       }
     }
     setHydrated(true);
   }, []);
 
-  const persist = (nextToken: string | null) => {
+  const persist = (nextToken: string | null, nextUser?: User | null) => {
     if (nextToken) {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ token: nextToken }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ token: nextToken, user: nextUser || null }),
+      );
     } else {
-      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
     }
   };
 
@@ -111,7 +114,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(nextUser);
       setToken(data.token);
-      persist(data.token);
+      persist(data.token, nextUser);
 
       return nextUser;
     } catch (err) {
@@ -129,7 +132,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setToken(null);
     setError(null);
-    persist(null);
+    persist(null, null);
   }, []);
 
   // Register function
