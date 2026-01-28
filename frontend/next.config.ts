@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'producebusiness.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'www.svgrepo.com' },
+      { protocol: 'https', hostname: 'via.placeholder.com' },
     ],
   }
 };

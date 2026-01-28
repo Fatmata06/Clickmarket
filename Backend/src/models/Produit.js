@@ -33,6 +33,23 @@ const produitSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    rating: {
+      type: Number,
+      default: 4.5,
+      min: 1,
+      max: 5,
+    },
+    reviewsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    tags: [
+      {
+        type: String,
+        enum: ["Bio", "Local", "Exotique", "Frais", "Promo", "Nouveau"],
+      },
+    ],
     images: [
       {
         url: { type: String, required: true },
@@ -41,10 +58,10 @@ const produitSchema = new mongoose.Schema(
     ],
     fournisseur: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Fournisseur",
+      ref: "User",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Produit", produitSchema);

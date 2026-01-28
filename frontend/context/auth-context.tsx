@@ -6,10 +6,12 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
 
 const STORAGE_KEY = "clickmarket_auth";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";
 
 type User = {
   id: string;
@@ -68,24 +70,21 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true);
   }, []);
 
-  const persist = ( nextToken: string | null) => {
+  const persist = (nextToken: string | null) => {
     if (nextToken) {
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ token: nextToken })
-      );
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ token: nextToken }));
     } else {
       sessionStorage.removeItem(STORAGE_KEY);
     }
   };
 
   // Login function
-  const login = async ({ email, motDePasse }: LoginPayload) => {
+  const login = useCallback(async ({ email, motDePasse }: LoginPayload) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +97,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) {
         throw new Error(
           (data && (data.message as string | undefined)) ??
-            "Impossible de se connecter pour le moment."
+            "Impossible de se connecter pour le moment.",
         );
       }
 
@@ -123,79 +122,82 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Logout function
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     setError(null);
     persist(null);
-  };
+  }, []);
 
   // Register function
-  const register = async ({
-    nom,
-    prenom,
-    email,
-    motDePasse,
-    role = "client",
-  }: RegisterPayload) => {
-    setIsLoading(true);
-    setError(null);
+  const register = useCallback(
+    async ({
+      nom,
+      prenom,
+      email,
+      motDePasse,
+      role = "client",
+    }: RegisterPayload) => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ nom, prenom, email, motDePasse, role }),
-      });
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ nom, prenom, email, motDePasse, role }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          (data && (data.message as string | undefined)) ??
-            "Erreur lors de l'inscription."
-        );
+        if (!response.ok) {
+          throw new Error(
+            (data && (data.message as string | undefined)) ??
+              "Erreur lors de l'inscription.",
+          );
+        }
+
+        const nextUser: User = {
+          id: data.user?.id ?? data.user?._id ?? "",
+          email: data.user?.email ?? email,
+          nom: data.user?.nom,
+          prenom: data.user?.prenom,
+          role: data.user?.role,
+        };
+
+        return nextUser;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Une erreur est survenue.";
+        setError(message);
+        throw err instanceof Error ? err : new Error(message);
+      } finally {
+        setIsLoading(false);
       }
-
-      const nextUser: User = {
-        id: data.user?.id ?? data.user?._id ?? "",
-        email: data.user?.email ?? email,
-        nom: data.user?.nom,
-        prenom: data.user?.prenom,
-        role: data.user?.role,
-      };
-
-      return nextUser;
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Une erreur est survenue.";
-      setError(message);
-      throw err instanceof Error ? err : new Error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [],
+  );
 
   // Request password reset function
-  const requestPasswordReset = async (email: string) => {
+  const requestPasswordReset = useCallback(async (email: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/auth/request-password-reset`,
+        `${API_BASE_URL}/auth/request-password-reset`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ email }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -203,7 +205,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) {
         throw new Error(
           (data && (data.message as string | undefined)) ??
-            "Erreur lors de la demande."
+            "Erreur lors de la demande.",
         );
       }
     } catch (err) {
@@ -214,16 +216,19 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Role checking function
-  const hasRole = (roles: string | string[]) => {
-    const roleList = Array.isArray(roles) ? roles : [roles];
-    const currentRole = user?.role?.toLowerCase();
-    if (!currentRole) return false;
+  const hasRole = useCallback(
+    (roles: string | string[]) => {
+      const roleList = Array.isArray(roles) ? roles : [roles];
+      const currentRole = user?.role?.toLowerCase();
+      if (!currentRole) return false;
 
-    return roleList.some((role) => role.toLowerCase() === currentRole);
-  };
+      return roleList.some((role) => role.toLowerCase() === currentRole);
+    },
+    [user],
+  );
 
   // Memoized context value
   const value = useMemo<AuthContextValue>(
@@ -239,7 +244,17 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       requestPasswordReset,
       hasRole,
     }),
-    [user, token, error, isLoading]
+    [
+      user,
+      token,
+      error,
+      isLoading,
+      login,
+      register,
+      logout,
+      requestPasswordReset,
+      hasRole,
+    ],
   );
 
   if (!hydrated) {

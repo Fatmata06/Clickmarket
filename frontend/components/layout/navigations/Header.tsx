@@ -47,6 +47,14 @@ export default function Header() {
     router.push("/");
   };
 
+  const handleSearch = (query: string) => {
+    if (query.trim()) {
+      router.push(`/search?q=${encodeURIComponent(query)}`);
+      setSearchQuery("");
+      setIsSearchOpen(false);
+    }
+  };
+
   const publicNavigation = [
     { name: "Accueil", href: "/" },
     { name: "Produits", href: "/produits" },
@@ -152,6 +160,11 @@ export default function Header() {
                           className="pl-10 bg-gray-100 dark:bg-gray-800 border-0 w-full"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSearch(searchQuery);
+                            }
+                          }}
                           autoFocus
                           onBlur={() => setIsSearchOpen(false)}
                         />

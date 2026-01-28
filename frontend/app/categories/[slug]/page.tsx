@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,127 +15,101 @@ import {
   Heart,
 } from "lucide-react";
 import Breadcrumb from "@/components/breadcrumb";
+import { useProducts } from "@/hooks/useProducts";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-export default function CategoryPage() {
+export default function CategoryPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const resolvedParams = use(params);
+  const categorySlug = resolvedParams.slug;
+
+  // Map slug to typeProduit
+  const categoryType =
+    categorySlug === "fruits"
+      ? "fruits"
+      : categorySlug === "legumes"
+        ? "legumes"
+        : categorySlug;
+
+  const { products, isLoading, error, total } = useProducts({
+    typeProduit: categoryType,
+    limit: 12,
+  });
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("popular");
-  const [priceRange, setPriceRange] = useState<[number, number]>([1000, 20000]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [priceRange, setPriceRange] = useState([1000, 20000]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
   const category = {
-    slug: "huiles-vinaigres",
-    name: "Huiles & Vinaigres",
-    description: "Découvrez notre sélection d'huiles et vinaigres de qualité, locaux et biologiques. Parfaits pour rehausser vos plats avec des saveurs authentiques.",
-    totalProducts: 48,
-    image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea"
+    slug: categorySlug,
+    name:
+      categorySlug === "fruits"
+        ? "Fruits Frais"
+        : categorySlug === "legumes"
+          ? "Légumes"
+          : categorySlug
+              .replace(/-/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase()),
+    description:
+      categorySlug === "fruits"
+        ? "Découvrez notre sélection de fruits frais, locaux et de saison."
+        : categorySlug === "legumes"
+          ? "Des légumes frais et biologiques pour vos plats quotidiens."
+          : "Découvrez notre sélection de produits de qualité.",
+    totalProducts: total || 0,
+    image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea",
   };
-
-  const filters = {
-    brands: ["BioNature", "LocalFarm", "Premium", "Terroir", "Maison"],
-    categories: [
-      "Huile d'Olive",
-      "Huile d'Arachide",
-      "Vinaigre",
-      "Huile de Coco",
-      "Huile de Sésame"
-    ]
-  };
-
-  const products = [
-    {
-      id: 1,
-      name: "Huile d'Olive Extra Vierge BIO 1L",
-      brand: "BioNature",
-      price: 4500,
-      originalPrice: 5200,
-      discount: 13,
-      rating: 4.5,
-      reviews: 128,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
-      isNew: true,
-      stock: 50
-    },
-    {
-      id: 2,
-      name: "Vinaigre de Cidre BIO 750ml",
-      brand: "LocalFarm",
-      price: 2800,
-      originalPrice: 3200,
-      discount: 12,
-      rating: 4.2,
-      reviews: 89,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
-      isNew: false,
-      stock: 32
-    },
-    {
-      id: 3,
-      name: "Huile d'Arachide 1L",
-      brand: "Terroir",
-      price: 3200,
-      originalPrice: 3500,
-      discount: 9,
-      rating: 4.3,
-      reviews: 156,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
-      isNew: true,
-      stock: 45
-    },
-    {
-      id: 4,
-      name: "Huile de Coco Vierge 500ml",
-      brand: "Premium",
-      price: 6500,
-      originalPrice: 7200,
-      discount: 10,
-      rating: 4.7,
-      reviews: 203,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
-      isNew: false,
-      stock: 18
-    },
-    {
-      id: 5,
-      name: "Vinaigre Balsamique 250ml",
-      brand: "Maison",
-      price: 4200,
-      originalPrice: 4800,
-      discount: 12,
-      rating: 4.4,
-      reviews: 76,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
-      isNew: true,
-      stock: 25
-    },
-    {
-      id: 6,
-      name: "Huile de Sésame 250ml",
-      brand: "BioNature",
-      price: 2800,
-      originalPrice: 3200,
-      discount: 12,
-      rating: 4.1,
-      reviews: 54,
-      image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea",
-      isNew: false,
-      stock: 38
-    }
-  ];
 
   const breadcrumbs = [
     { label: "Accueil", href: "/" },
     { label: "Catégories", href: "/categories" },
-    { label: category.name, href: `#` }
+    { label: category.name, href: `#` },
   ];
 
   const sortOptions = [
     { value: "popular", label: "Les plus populaires" },
     { value: "newest", label: "Nouveautés" },
-    { value: "price-low", label: "Prix croissant" },
-    { value: "price-high", label: "Prix décroissant" },
-    { value: "rating", label: "Meilleures notes" }
+    { value: "price-asc", label: "Prix croissant" },
+    { value: "price-desc", label: "Prix décroissant" },
+    { value: "rating", label: "Meilleures notes" },
   ];
+
+  // Dummy data for filters (to be connected to backend later)
+  const filters = {
+    brands: ["Ferme Locale", "BioNature", "FruitExpress", "Maison"],
+    categories: [
+      "Fruits d'été",
+      "Fruits exotiques",
+      "Fruits de saison",
+      "Fruits secs",
+    ],
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Erreur
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -174,7 +148,9 @@ export default function CategoryPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className={`lg:w-1/4 ${showFilters ? "block" : "hidden lg:block"}`}>
+          <div
+            className={`lg:w-1/4 ${showFilters ? "block" : "hidden lg:block"}`}
+          >
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-6">
               {/* Mobile Filters Header */}
               <div className="flex items-center justify-between lg:hidden">
@@ -210,7 +186,9 @@ export default function CategoryPage() {
                     max="50000"
                     step="1000"
                     value={priceRange[0]}
-                    onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                    onChange={(e) =>
+                      setPriceRange([parseInt(e.target.value), priceRange[1]])
+                    }
                     className="w-full"
                   />
                   <input
@@ -219,7 +197,9 @@ export default function CategoryPage() {
                     max="50000"
                     step="1000"
                     value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                    onChange={(e) =>
+                      setPriceRange([priceRange[0], parseInt(e.target.value)])
+                    }
                     className="w-full"
                   />
                 </div>
@@ -227,10 +207,15 @@ export default function CategoryPage() {
 
               {/* Brands */}
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-900 dark:text-white">Marques</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Marques
+                </h4>
                 <div className="space-y-2">
                   {filters.brands.map((brand) => (
-                    <label key={brand} className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      key={brand}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedBrands.includes(brand)}
@@ -238,12 +223,16 @@ export default function CategoryPage() {
                           if (e.target.checked) {
                             setSelectedBrands([...selectedBrands, brand]);
                           } else {
-                            setSelectedBrands(selectedBrands.filter(b => b !== brand));
+                            setSelectedBrands(
+                              selectedBrands.filter((b) => b !== brand),
+                            );
                           }
                         }}
                         className="rounded text-green-600 focus:ring-green-500"
                       />
-                      <span className="text-gray-600 dark:text-gray-400">{brand}</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {brand}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -251,12 +240,14 @@ export default function CategoryPage() {
 
               {/* Categories */}
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-900 dark:text-white">Sous-catégories</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Sous-catégories
+                </h4>
                 <div className="space-y-1">
                   {filters.categories.map((subCategory) => (
                     <Link
                       key={subCategory}
-                      href={`/categories/${category.slug}/${subCategory.toLowerCase().replace(/\s+/g, '-')}`}
+                      href={`/categories/${category.slug}/${subCategory.toLowerCase().replace(/\s+/g, "-")}`}
                       className="block py-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
                     >
                       {subCategory}
@@ -341,129 +332,151 @@ export default function CategoryPage() {
             </div>
 
             {/* Products */}
-            <div className={viewMode === "grid" 
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              : "space-y-4"
-            }>
-              {products.map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/produits/${product.id}`}
-                  className={`group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden ${
-                    viewMode === "list" ? "flex" : "block"
-                  }`}
-                >
-                  {/* Product Image */}
-                  <div className={`relative ${
-                    viewMode === "list" 
-                      ? "w-1/4 aspect-square" 
-                      : "w-full aspect-square"
-                  }`}>
-                    <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        sizes={viewMode === "list" 
-                          ? "25vw" 
-                          : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        }
-                      />
-                    </div>
-                    {product.discount > 0 && (
-                      <Badge className="absolute top-2 left-2 bg-red-500 text-white">
-                        -{product.discount}%
-                      </Badge>
-                    )}
-                    {product.isNew && (
-                      <Badge className="absolute top-2 right-2 bg-blue-500 text-white">
-                        Nouveau
-                      </Badge>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute bottom-2 right-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        // Add to favorites
-                      }}
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                  : "space-y-4"
+              }
+            >
+              {products.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Aucun produit trouvé dans cette catégorie
+                  </p>
+                </div>
+              ) : (
+                products.map((product) => {
+                  const imageUrl =
+                    product.images && product.images.length > 0
+                      ? (product.images[0] as { url: string; publicId: string })
+                          .url
+                      : "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136";
+
+                  return (
+                    <Link
+                      key={product._id}
+                      href={`/produits/${product._id}`}
+                      className={`group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden ${
+                        viewMode === "list" ? "flex" : "block"
+                      }`}
                     >
-                      <Heart className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Product Info */}
-                  <div className={`p-4 ${
-                    viewMode === "list" ? "flex-1" : ""
-                  }`}>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <Badge variant="outline" className="text-xs mb-2">
-                          {product.brand}
-                        </Badge>
-                        <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors line-clamp-2">
-                          {product.name}
-                        </h3>
-                      </div>
-                    </div>
-
-                    <div className="mt-2 flex items-center gap-1">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-3 w-3 ${
-                              i < Math.floor(product.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : i < product.rating
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300 dark:text-gray-600"
-                            }`}
+                      {/* Product Image */}
+                      <div
+                        className={`relative ${
+                          viewMode === "list"
+                            ? "w-1/4 aspect-square"
+                            : "w-full aspect-square"
+                        }`}
+                      >
+                        <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
+                          <Image
+                            src={imageUrl}
+                            alt={product.nomProduit}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes={
+                              viewMode === "list"
+                                ? "25vw"
+                                : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            }
                           />
-                        ))}
+                        </div>
+                        {product.stock < 10 && product.stock > 0 && (
+                          <Badge className="absolute top-2 left-2 bg-orange-500 text-white">
+                            Stock faible
+                          </Badge>
+                        )}
+                        {product.stock === 0 && (
+                          <Badge className="absolute top-2 left-2 bg-red-500 text-white">
+                            Épuisé
+                          </Badge>
+                        )}
+                        {product.tags && product.tags.includes("Nouveau") && (
+                          <Badge className="absolute top-2 right-2 bg-blue-500 text-white">
+                            Nouveau
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute bottom-2 right-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            // Add to favorites
+                          }}
+                        >
+                          <Heart className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        ({product.reviews})
-                      </span>
-                    </div>
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {product.price.toLocaleString()} FCFA
-                        </p>
-                        {product.originalPrice > product.price && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 line-through">
-                            {product.originalPrice.toLocaleString()} FCFA
+                      {/* Product Info */}
+                      <div
+                        className={`p-4 ${viewMode === "list" ? "flex-1" : ""}`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            {product.fournisseur?.nomEntreprise && (
+                              <Badge variant="outline" className="text-xs mb-2">
+                                {product.fournisseur.nomEntreprise}
+                              </Badge>
+                            )}
+                            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors line-clamp-2">
+                              {product.nomProduit}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 flex items-center gap-1">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-3 w-3 ${
+                                  i < Math.floor(product.rating || 4.5)
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : i < (product.rating || 4.5)
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-gray-300 dark:text-gray-600"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            ({product.reviewsCount || 0})
+                          </span>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between">
+                          <div>
+                            <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                              {product.prix.toLocaleString()} FCFA
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              // Add to cart
+                            }}
+                          >
+                            <ShoppingCart className="h-4 w-4" />
+                            Ajouter
+                          </Button>
+                        </div>
+
+                        {product.stock > 0 && product.stock < 10 && (
+                          <p className="mt-2 text-xs text-orange-600 dark:text-orange-400">
+                            Plus que {product.stock} en stock
                           </p>
                         )}
                       </div>
-                      <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          // Add to cart
-                        }}
-                      >
-                        <ShoppingCart className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                      {product.stock > 10 ? (
-                        <span className="text-green-600">En stock</span>
-                      ) : product.stock > 0 ? (
-                        <span className="text-yellow-600">Stock limité</span>
-                      ) : (
-                        <span className="text-red-600">Rupture de stock</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                    </Link>
+                  );
+                })
+              )}
             </div>
 
             {/* Pagination */}

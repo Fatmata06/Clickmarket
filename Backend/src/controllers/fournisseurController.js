@@ -3,18 +3,34 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 exports.registerFournisseur = async (req, res) => {
-  console.log("BODY RECU =====>", req.body);
+  // console.log("BODY RECU =====>", req.body);
 
   try {
     // Déstructuration complète
-    const { nom, prenom, email, motDePasse, nomEntreprise, numeroEntreprise, localisationEntreprise } = req.body;
+    const {
+      nom,
+      prenom,
+      email,
+      motDePasse,
+      nomEntreprise,
+      numeroEntreprise,
+      localisationEntreprise,
+    } = req.body;
 
     // Vérifier si l'email existe
     const exist = await Fournisseur.findOne({ email });
     if (exist) return res.status(400).json({ message: "Email déjà utilisé" });
 
     // Vérifier que tous les champs sont remplis
-    if (!nom || !prenom || !email || !motDePasse || !nomEntreprise || !numeroEntreprise || !localisationEntreprise) {
+    if (
+      !nom ||
+      !prenom ||
+      !email ||
+      !motDePasse ||
+      !nomEntreprise ||
+      !numeroEntreprise ||
+      !localisationEntreprise
+    ) {
       return res.status(400).json({ message: "Tous les champs sont requis" });
     }
 
@@ -30,14 +46,14 @@ exports.registerFournisseur = async (req, res) => {
       nomEntreprise,
       numeroEntreprise,
       localisationEntreprise,
-      role: "fournisseur"
+      role: "fournisseur",
     });
 
     // Générer token JWT
     const token = jwt.sign(
       { id: fournisseur._id, role: "fournisseur" },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.status(201).json({ message: "Fournisseur créé", fournisseur, token });
@@ -61,7 +77,7 @@ exports.loginFournisseur = async (req, res) => {
     const token = jwt.sign(
       { id: fournisseur._id, role: "fournisseur" },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.json({ message: "Connexion réussie", token });

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Header from "@/components/layout/navigations/Header";
 import Footer from "@/components/layout/navigations/Footer";
 import { AuthProvider } from "@/context/auth-context";
+import { CartProvider } from "@/context/cart-context";
 import { cn } from "@/lib/utils";
 
 const geistSans = Geist({
@@ -31,14 +32,10 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="fr">
       <body
-        className={cn(
-          geistSans.variable,
-          geistMono.variable,
-          "antialiased",
-        )}
+        className={cn(geistSans.variable, geistMono.variable, "antialiased")}
       >
-        
-          <AuthProvider>
+        <AuthProvider>
+          <CartProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="system"
@@ -50,7 +47,8 @@ export default function RootLayout({
               <Footer />
               <Toaster />
             </ThemeProvider>
-          </AuthProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

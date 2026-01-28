@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -20,72 +20,89 @@ import {
 } from "lucide-react";
 // import { Breadcrumb } from "@/components/ui/breadcrumb";
 import Breadcrumb from "@/components/breadcrumb";
+import { useProduct } from "@/hooks/useProduct";
+import { useCart } from "@/context/cart-context";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useProducts } from "@/hooks/useProducts";
 
-export default function ProductDetailPage() {
+export default function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const resolvedParams = use(params);
+  const { product, isLoading, error } = useProduct(resolvedParams.id);
+  const { products: relatedProducts } = useProducts({ limit: 3 });
+  const { addToCart } = useCart();
+
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
 
-  const product = {
-    id: 1,
-    name: "Huile d'Olive Extra Vierge BIO 1L",
-    category: "Huiles & Vinaigres",
-    brand: "BioNature",
-    price: 4500,
-    originalPrice: 5200,
-    discount: 13,
-    rating: 4.5,
-    reviews: 128,
-    description: "Huile d'olive extra vierge biologique, première pression à froid. Produit local de qualité supérieure, riche en antioxydants et en goût.",
-    features: [
-      "Certifié Agriculture Biologique",
-      "Première pression à froid",
-      "Produit local du Sénégal",
-      "Riche en antioxydants",
-      "Bouteille en verre recyclable"
-    ],
-    specifications: {
-      "Volume": "1 Litre",
-      "Type": "Extra Vierge",
-      "Origine": "Sénégal",
-      "Certification": "Bio",
-      "Conservation": "À l'abri de la lumière"
-    },
-    images: [
-      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
-      "https://images.unsplash.com/photo-1592924357228-91a4daadcfea",
-      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
-      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136"
-    ]
+  const handleAddToCart = async () => {
+    if (!product) return;
+    try {
+      setAddingToCart(true);
+      await addToCart(product._id, quantity);
+    } catch (error) {
+      console.error("Erreur lors de l'ajout au panier:", error);
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
-  const relatedProducts = [
-    {
-      id: 2,
-      name: "Vinaigre de Cidre BIO 750ml",
-      price: 2800,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136"
-    },
-    {
-      id: 3,
-      name: "Huile d'Arachide 1L",
-      price: 3200,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136"
-    },
-    {
-      id: 4,
-      name: "Sauce Tomate BIO 500g",
-      price: 1800,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136"
-    }
-  ];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Produit non trouvé
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {error || "Ce produit n'existe pas ou a été supprimé"}
+          </p>
+          <Link href="/produits">
+            <Button>Retour aux produits</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const breadcrumbs = [
     { label: "Accueil", href: "/" },
     { label: "Produits", href: "/produits" },
-    { label: product.category, href: `/categories/${product.category.toLowerCase()}` },
-    { label: product.name, href: `#` }
+    {
+      label: product.typeProduit || "Catégorie",
+      href: `/categories/${product.typeProduit || ""}`,
+    },
+    { label: product.nomProduit, href: `#` },
   ];
+
+  // Préparer les images
+  const productImages = product.images || [
+    {
+      url: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136",
+      publicId: "default",
+    },
+  ];
+
+  const getImageUrl = (index: number) => {
+    if (!productImages[index])
+      return "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136";
+    return typeof productImages[index] === "string"
+      ? (productImages[index] as string)
+      : (productImages[index] as { url: string; publicId: string }).url;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -103,49 +120,63 @@ export default function ProductDetailPage() {
             {/* Main Image */}
             <div className="h-82 xl:h-96 w-full relative aspect-square rounded-lg overflow-hidden bg-white dark:bg-gray-800 shadow-lg">
               <Image
-                src={product.images[selectedImage]}
-                alt={product.name}
+                src={getImageUrl(selectedImage)}
+                alt={product.nomProduit}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
-              <Badge className="absolute top-4 left-4 bg-red-500 text-white">
-                -{product.discount}%
-              </Badge>
+              {product.stock < 10 && product.stock > 0 && (
+                <Badge className="absolute top-4 left-4 bg-orange-500 text-white">
+                  Stock faible
+                </Badge>
+              )}
+              {product.stock === 0 && (
+                <Badge className="absolute top-4 left-4 bg-red-500 text-white">
+                  Rupture de stock
+                </Badge>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
                 className="absolute top-4 right-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
                 onClick={() => setIsFavorite(!isFavorite)}
               >
-                <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+                <Heart
+                  className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
+                />
               </Button>
             </div>
 
             {/* Thumbnails */}
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  className={`h-24 w-full relative aspect-square rounded-lg overflow-hidden border-2 ${
-                    selectedImage === index
-                      ? "border-green-500 dark:border-green-400"
-                      : "border-transparent"
-                  }`}
-                  onClick={() => setSelectedImage(index)}
-                >
-                  <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
-                    <Image
-                      src={image}
-                      alt={`${product.name} vue ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 25vw, 12.5vw"
-                    />
-                  </div>
-                </button>
-              ))}
-            </div>
+            {productImages.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {productImages.map((image, index) => {
+                  const imgUrl = getImageUrl(index);
+                  return (
+                    <button
+                      key={index}
+                      className={`h-24 w-full relative aspect-square rounded-lg overflow-hidden border-2 ${
+                        selectedImage === index
+                          ? "border-green-500 dark:border-green-400"
+                          : "border-transparent"
+                      }`}
+                      onClick={() => setSelectedImage(index)}
+                    >
+                      <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
+                        <Image
+                          src={imgUrl}
+                          alt={`${product.nomProduit} vue ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 25vw, 12.5vw"
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
@@ -153,20 +184,22 @@ export default function ProductDetailPage() {
             {/* Brand & Category */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-sm">
-                  {product.brand}
-                </Badge>
+                {product.fournisseur?.nomEntreprise && (
+                  <Badge variant="outline" className="text-sm">
+                    {product.fournisseur.nomEntreprise}
+                  </Badge>
+                )}
                 <Link
-                  href={`/categories/${product.category.toLowerCase()}`}
+                  href={`/categories/${product.typeProduit || ""}`}
                   className="text-green-600 dark:text-green-400 hover:underline text-sm"
                 >
-                  {product.category}
+                  {product.typeProduit || "Produits"}
                 </Link>
               </div>
 
               {/* Product Name */}
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {product.name}
+                {product.nomProduit}
               </h1>
 
               {/* Rating */}
@@ -176,17 +209,17 @@ export default function ProductDetailPage() {
                     <Star
                       key={i}
                       className={`h-5 w-5 ${
-                        i < Math.floor(product.rating)
+                        i < Math.floor(product.rating || 4.5)
                           ? "fill-yellow-400 text-yellow-400"
-                          : i < product.rating
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300 dark:text-gray-600"
+                          : i < (product.rating || 4.5)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300 dark:text-gray-600"
                       }`}
                     />
                   ))}
                 </div>
                 <span className="text-gray-600 dark:text-gray-400">
-                  {product.rating} ({product.reviews} avis)
+                  {product.rating || 4.5} ({product.reviewsCount || 0} avis)
                 </span>
               </div>
             </div>
@@ -195,15 +228,9 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-4">
                 <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {product.price.toLocaleString()} FCFA
-                </span>
-                <span className="text-xl text-gray-500 dark:text-gray-400 line-through">
-                  {product.originalPrice.toLocaleString()} FCFA
+                  {product.prix.toLocaleString()} FCFA
                 </span>
               </div>
-              <p className="text-green-600 dark:text-green-400 font-medium">
-                Économisez {(product.originalPrice - product.price).toLocaleString()} FCFA
-              </p>
             </div>
 
             {/* Description */}
@@ -231,18 +258,24 @@ export default function ProductDetailPage() {
               </ul>
             </div> */}
 
-            {/* Specifications */}
+            {/* Stock Info */}
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Spécifications
+                Disponibilité
               </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  <div key={key} className="flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                    <span className="text-gray-600 dark:text-gray-400">{key}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{value}</span>
-                  </div>
-                ))}
+              <div className="flex items-center gap-3">
+                <div
+                  className={`h-3 w-3 rounded-full ${
+                    product.stock > 0 ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></div>
+                <span className="text-gray-600 dark:text-gray-400">
+                  {product.stock > 0
+                    ? `En stock (${product.stock} disponible${
+                        product.stock > 1 ? "s" : ""
+                      })`
+                    : "Rupture de stock"}
+                </span>
               </div>
             </div>
 
@@ -250,7 +283,9 @@ export default function ProductDetailPage() {
             <div className="space-y-4">
               {/* Quantity Selector */}
               <div className="flex items-center gap-4">
-                <span className="text-gray-700 dark:text-gray-300 font-medium">Quantité:</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  Quantité:
+                </span>
                 <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg">
                   <Button
                     variant="ghost"
@@ -263,7 +298,9 @@ export default function ProductDetailPage() {
                   <Input
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) =>
+                      setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                    }
                     className="w-16 text-center border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     min="1"
                   />
@@ -277,7 +314,10 @@ export default function ProductDetailPage() {
                   </Button>
                 </div>
                 <span className="text-gray-600 dark:text-gray-400">
-                  Stock disponible: <span className="font-medium text-green-600">50 unités</span>
+                  Stock disponible:{" "}
+                  <span className="font-medium text-green-600">
+                    {product.stock} unité{product.stock > 1 ? "s" : ""}
+                  </span>
                 </span>
               </div>
 
@@ -286,22 +326,16 @@ export default function ProductDetailPage() {
                 <Button
                   size="lg"
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleAddToCart}
+                  disabled={addingToCart || product.stock === 0}
                 >
                   <ShoppingCart className="h-5 w-5 mr-2" />
-                  Ajouter au panier
+                  {addingToCart ? "Ajout en cours..." : "Ajouter au panier"}
                 </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="flex-1"
-                >
+                <Button size="lg" variant="outline" className="flex-1">
                   Acheter maintenant
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-12 w-12"
-                >
+                <Button variant="ghost" size="icon" className="h-12 w-12">
                   <Share2 className="h-5 w-5" />
                 </Button>
               </div>
@@ -314,8 +348,12 @@ export default function ProductDetailPage() {
                   <Truck className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Livraison rapide</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">24-48h à Dakar</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    Livraison rapide
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    24-48h à Dakar
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -323,8 +361,12 @@ export default function ProductDetailPage() {
                   <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Garantie satisfaction</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">30 jours pour changer d&apos;avis</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    Garantie satisfaction
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    30 jours pour changer d&apos;avis
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -332,8 +374,12 @@ export default function ProductDetailPage() {
                   <RotateCcw className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Retours faciles</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">15 jours pour retourner</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    Retours faciles
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    15 jours pour retourner
+                  </p>
                 </div>
               </div>
             </div>
@@ -347,7 +393,7 @@ export default function ProductDetailPage() {
               Produits similaires
             </h2>
             <Link
-              href={`/categories/${product.category.toLowerCase()}`}
+              href={`/categories/${product.typeProduit}`}
               className="text-green-600 dark:text-green-400 hover:underline flex items-center gap-1"
             >
               Voir tout
@@ -358,15 +404,21 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {relatedProducts.map((relatedProduct) => (
               <Link
-                key={relatedProduct.id}
-                href={`/produits/${relatedProduct.id}`}
+                key={relatedProduct._id}
+                href={`/produits/${relatedProduct._id}`}
                 className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
               >
                 <div className="relative aspect-square">
                   <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
                     <Image
-                      src={relatedProduct.image}
-                      alt={relatedProduct.name}
+                      src={
+                        relatedProduct.images && relatedProduct.images[0]
+                          ? typeof relatedProduct.images[0] === "string"
+                            ? relatedProduct.images[0]
+                            : relatedProduct.images[0].url
+                          : "/images/placeholder-product.jpg"
+                      }
+                      alt={relatedProduct.nomProduit}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 768px) 50vw, 33vw"
@@ -375,10 +427,10 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                    {relatedProduct.name}
+                    {relatedProduct.nomProduit}
                   </h3>
                   <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-2">
-                    {relatedProduct.price.toLocaleString()} FCFA
+                    {relatedProduct.prix.toLocaleString()} FCFA
                   </p>
                 </div>
               </Link>

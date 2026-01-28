@@ -13,28 +13,28 @@ export default function FavorisPage() {
       name: "Produit 1",
       price: 15000,
       rating: 4.5,
-      image: "https://via.placeholder.com/200",
+      image: "https://res.cloudinary.com/ds5zfxlhf/image/upload/v1767824814/clickmarche/produits/essh8m0nedejxauggo3z.jpg",
     },
     {
       id: 2,
       name: "Produit 2",
       price: 25000,
       rating: 4.8,
-      image: "https://via.placeholder.com/200",
+      image: "https://res.cloudinary.com/ds5zfxlhf/image/upload/v1767824814/clickmarche/produits/essh8m0nedejxauggo3z.jpg",
     },
     {
       id: 3,
       name: "Produit 3",
       price: 35000,
       rating: 4.2,
-      image: "https://via.placeholder.com/200",
+      image: "https://res.cloudinary.com/ds5zfxlhf/image/upload/v1767824814/clickmarche/produits/essh8m0nedejxauggo3z.jpg",
     },
     {
       id: 4,
       name: "Produit 4",
       price: 12000,
       rating: 4.6,
-      image: "https://via.placeholder.com/200",
+      image: "https://res.cloudinary.com/ds5zfxlhf/image/upload/v1767824814/clickmarche/produits/essh8m0nedejxauggo3z.jpg",
     },
   ];
 
@@ -62,6 +62,8 @@ export default function FavorisPage() {
                 <Image
                   src={product.image}
                   alt={product.name}
+                  width={400}
+                  height={400}
                   className="w-full h-48 object-cover"
                 />
                 <Button
