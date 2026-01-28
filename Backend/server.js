@@ -18,7 +18,7 @@ const app = express();
 connectDB();
 
 // Middlewares
-app.use(cors({ origin: "http://localhost:3000", credentials: true })); // ⬅️ Adapter
+app.use(cors({ origin: [process.env.FRONTEND_URL], credentials: true })); // ⬅️ Adapter
 app.use(cookieParser()); // ⬅️ Ajouter
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
