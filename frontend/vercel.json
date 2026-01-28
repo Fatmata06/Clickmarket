@@ -3,6 +3,6 @@
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
   "env": {
-    "NEXT_PUBLIC_API_URL": "@api_url"
+    "NEXT_PUBLIC_API_URL": "https://clickmarche.onrender.com/api"
   }
 }
