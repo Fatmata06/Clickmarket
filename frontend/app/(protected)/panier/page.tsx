@@ -14,10 +14,17 @@ import {
 import Image from "next/image";
 import { useCart } from "@/context/cart-context";
 import { useState } from "react";
+import { createCommande } from "@/lib/api/commandes";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ConfirmCommandeDialog } from "@/components/commandes/ConfirmCommandeDialog";
 
 export default function PanierPage() {
   const { cart, isLoading, updateQuantity, removeItem } = useCart();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const router = useRouter();
 
   const cartItems = cart?.articles || [];
 
@@ -50,6 +57,38 @@ export default function PanierPage() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleCreateOrder = async () => {
+    if (cartItems.length === 0) {
+      toast.error("Votre panier est vide");
+      return;
+    }
+
+    try {
+      setCreatingOrder(true);
+      const newCommande = await createCommande({
+        methodeLivraison: "livraison",
+      });
+      toast.success("Commande créée avec succès !");
+      setConfirmDialogOpen(false);
+      router.push(`/commandes/${newCommande._id}`);
+    } catch (error) {
+      console.error("Erreur lors de la création de la commande:", error);
+      toast.error(
+        (error as Error).message || "Erreur lors de la création de la commande",
+      );
+    } finally {
+      setCreatingOrder(false);
+    }
+  };
+
+  const handleOpenConfirmDialog = () => {
+    if (cartItems.length === 0) {
+      toast.error("Votre panier est vide");
+      return;
+    }
+    setConfirmDialogOpen(true);
   };
 
   if (isLoading) {
@@ -186,13 +225,23 @@ export default function PanierPage() {
               <Button
                 className="w-full bg-green-600 hover:bg-green-700"
                 disabled={cartItems.length === 0 || isLoading}
+                onClick={handleOpenConfirmDialog}
               >
                 <ArrowRight className="h-4 w-4 mr-2" />
-                Procéder au paiement
+                Commander
               </Button>
             </CardContent>
           </Card>
         </div>
+
+        {/* Dialog de confirmation */}
+        <ConfirmCommandeDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          cartItems={cartItems}
+          isLoading={creatingOrder}
+          onConfirm={handleCreateOrder}
+        />
       </div>
     </ProtectedLayout>
   );

@@ -12,6 +12,15 @@ const STATUTS_AUTORISES = [
   "annulee",
 ];
 
+/**
+ * Fonction helper pour comparer les IDs d'utilisateur
+ * Gère les ObjectId et les strings
+ */
+function compareUserIds(commandeUserId, reqUserId) {
+  const cmd = commandeUserId?._id || commandeUserId;
+  return String(cmd) === String(reqUserId);
+}
+
 exports.creerCommande = async (req, res) => {
   try {
     // console.log("========== CRÉER COMMANDE ==========");
@@ -142,6 +151,7 @@ exports.listerCommandes = async (req, res) => {
 
     const commandes = await Commande.find(filtre)
       .sort({ createdAt: -1 })
+      .populate("utilisateur", "nom prenom email")
       .populate("zoneLivraison")
       .populate("articles.produit", "nomProduit prix");
 
@@ -154,6 +164,7 @@ exports.listerCommandes = async (req, res) => {
 exports.recupererCommande = async (req, res) => {
   try {
     const commande = await Commande.findById(req.params.id)
+      .populate("utilisateur", "nom prenom email")
       .populate("zoneLivraison")
       .populate("articles.produit", "nomProduit prix");
 
@@ -161,9 +172,12 @@ exports.recupererCommande = async (req, res) => {
       return res.status(404).json({ message: "Commande introuvable" });
     }
 
+    // Comparer avec l'ID de l'utilisateur peuplé (qui est maintenant un objet)
+    const utilisateurId = commande.utilisateur?._id || commande.utilisateur;
+
     if (
       req.user?.role !== "admin" &&
-      String(commande.utilisateur) !== req.user?.id
+      String(utilisateurId) !== String(req.user?.id)
     ) {
       return res.status(403).json({ message: "Acces refuse" });
     }
@@ -202,7 +216,8 @@ exports.annulerCommande = async (req, res) => {
       return res.status(404).json({ message: "Commande introuvable" });
     }
 
-    const isOwner = req.user && String(commande.utilisateur) === req.user.id;
+    const isOwner =
+      req.user && compareUserIds(commande.utilisateur, req.user.id);
     const isAdmin = req.user && req.user.role === "admin";
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: "Acces refuse" });
@@ -235,7 +250,7 @@ exports.modifierAdresseLivraison = async (req, res) => {
     }
 
     // Vérifier que c'est le propriétaire ou un admin
-    const isOwner = String(commande.utilisateur) === req.user?.id;
+    const isOwner = compareUserIds(commande.utilisateur, req.user?.id);
     if (!isOwner && req.user?.role !== "admin") {
       return res.status(403).json({ message: "Acces refuse" });
     }
@@ -290,7 +305,7 @@ exports.ajouterCommentaire = async (req, res) => {
     }
 
     // Vérifier que c'est le propriétaire ou un admin
-    const isOwner = String(commande.utilisateur) === req.user?.id;
+    const isOwner = compareUserIds(commande.utilisateur, req.user?.id);
     if (!isOwner && req.user?.role !== "admin") {
       return res.status(403).json({ message: "Acces refuse" });
     }
@@ -321,7 +336,7 @@ exports.getCommentaires = async (req, res) => {
     }
 
     // Vérifier l'accès
-    const isOwner = String(commande.utilisateur) === req.user?.id;
+    const isOwner = compareUserIds(commande.utilisateur, req.user?.id);
     if (!isOwner && req.user?.role !== "admin") {
       return res.status(403).json({ message: "Acces refuse" });
     }
@@ -345,7 +360,7 @@ exports.getHistorique = async (req, res) => {
     }
 
     // Vérifier l'accès
-    const isOwner = String(commande.utilisateur) === req.user?.id;
+    const isOwner = compareUserIds(commande.utilisateur, req.user?.id);
     if (!isOwner && req.user?.role !== "admin") {
       return res.status(403).json({ message: "Acces refuse" });
     }

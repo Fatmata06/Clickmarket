@@ -2,15 +2,15 @@ const jwt = require("jsonwebtoken");
 const Utilisateur = require("../models/User");
 
 exports.auth = async (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = req.header("Authorization")?.replace("Bearer ", "");
 
   if (!token) {
-    return res.status(401).json({ message: 'Accès refusé. Token manquant.' });
+    return res.status(401).json({ message: "Accès refusé. Token manquant." });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-   // req.user = decoded; // Ajoute l'utilisateur décodé à la requête
+    // req.user = decoded; // Ajoute l'utilisateur décodé à la requête
 
     req.user = {
       _id: decoded.userId,
@@ -22,7 +22,7 @@ exports.auth = async (req, res, next) => {
     };
     next(); // Passe au middleware suivant
   } catch (err) {
-    res.status(400).json({ message: "Token invalide." });
+    res.status(401).json({ message: "Token invalide ou expiré." });
   }
 };
 
@@ -30,8 +30,8 @@ exports.auth = async (req, res, next) => {
 // Ne bloque pas si le token est absent, mais l'ajoute à req.user s'il existe
 exports.optionalAuth = async (req, res, next) => {
   // Supporte "Bearer" ou "bearer" (insensible à la casse)
-  
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+
+  const token = req.header("Authorization")?.replace("Bearer ", "");
   // console.log("Token reçu dans optionalAuth:", token);
 
   if (!token) {

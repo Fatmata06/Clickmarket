@@ -85,13 +85,13 @@ export default function DashboardFournisseur() {
     {
       title: "Commandes",
       description: "Gérer les commandes",
-      href: "/fournisseur/commandes",
+      href: "/commandes",
       icon: ShoppingCart,
     },
     {
-      title: "Statistiques",
-      description: "Voir les performances",
-      href: "/fournisseur/statistiques",
+      title: "Voir le catalogue",
+      description: "Parcourir tous les produits",
+      href: "/produits",
       icon: BarChart3,
     },
   ];

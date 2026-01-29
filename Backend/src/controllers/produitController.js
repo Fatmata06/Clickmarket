@@ -263,6 +263,16 @@ exports.updateProduit = async (req, res) => {
     if (!produit)
       return res.status(404).json({ message: "Produit non trouvé" });
 
+    // Vérifier que l'utilisateur est soit le propriétaire du produit, soit un admin
+    if (
+      req.user.role !== "admin" &&
+      produit.fournisseur.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        message: "Vous n'êtes pas autorisé à modifier ce produit",
+      });
+    }
+
     if (nomProduit !== undefined) produit.nomProduit = nomProduit;
     if (typeProduit !== undefined) produit.typeProduit = typeProduit;
     if (description !== undefined) produit.description = description;
@@ -316,6 +326,16 @@ exports.deleteProduit = async (req, res) => {
     if (!produit)
       return res.status(404).json({ message: "Produit non trouvé" });
 
+    // Vérifier que l'utilisateur est soit le propriétaire du produit, soit un admin
+    if (
+      req.user.role !== "admin" &&
+      produit.fournisseur.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        message: "Vous n'êtes pas autorisé à supprimer ce produit",
+      });
+    }
+
     for (const img of produit.images || []) {
       await deleteFromCloudinary(img.publicId);
     }
@@ -335,6 +355,16 @@ exports.supprimerImage = async (req, res) => {
 
     if (!produit)
       return res.status(404).json({ message: "Produit non trouvé" });
+
+    // Vérifier que l'utilisateur est soit le propriétaire du produit, soit un admin
+    if (
+      req.user.role !== "admin" &&
+      produit.fournisseur.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        message: "Vous n'êtes pas autorisé à modifier ce produit",
+      });
+    }
 
     const image = produit.images.id(imageId);
     if (!image) return res.status(404).json({ message: "Image non trouvée" });
@@ -375,5 +405,59 @@ exports.getCategories = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+// Accepter un produit (Admin uniquement)
+exports.accepterProduit = async (req, res) => {
+  try {
+    const produit = await Produit.findById(req.params.id);
+    
+    if (!produit) {
+      return res.status(404).json({ message: "Produit non trouvé" });
+    }
+
+    produit.statutValidation = "accepte";
+    produit.raisonRefus = null;
+    produit.dateValidation = new Date();
+    await produit.save();
+
+    res.json({ 
+      message: "Produit accepté avec succès", 
+      produit 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Refuser un produit (Admin uniquement)
+exports.refuserProduit = async (req, res) => {
+  try {
+    const { raisonRefus } = req.body;
+    
+    if (!raisonRefus || raisonRefus.trim() === "") {
+      return res.status(400).json({ 
+        message: "Veuillez fournir une raison de refus" 
+      });
+    }
+
+    const produit = await Produit.findById(req.params.id);
+    
+    if (!produit) {
+      return res.status(404).json({ message: "Produit non trouvé" });
+    }
+
+    produit.statutValidation = "refuse";
+    produit.raisonRefus = raisonRefus;
+    produit.dateValidation = new Date();
+    await produit.save();
+
+    res.json({ 
+      message: "Produit refusé avec succès", 
+      produit 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

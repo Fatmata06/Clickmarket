@@ -1,4 +1,6 @@
 // lib/api/cart.ts
+import { handleAuthError, getAuthToken } from "./auth-error-handler";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export interface CartItem {
@@ -31,7 +33,7 @@ export interface CartResponse {
 
 // Récupérer le panier
 export async function getCart(): Promise<CartResponse> {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
@@ -42,17 +44,23 @@ export async function getCart(): Promise<CartResponse> {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (sessionId) {
+  // N'envoyer sessionId QUE si pas de token (utilisateur non connecté)
+  if (!token && sessionId) {
     headers["X-Session-ID"] = sessionId;
   }
 
   const response = await fetch(`${API_URL}/panier`, {
     method: "GET",
     headers,
-    credentials: "include", // Important pour les cookies de session
+    credentials: "include",
   });
 
-  // Stocker le sessionId retourné par le serveur
+  // Gérer les erreurs 401
+  if (response.status === 401) {
+    handleAuthError(response);
+  }
+
+  // Stocker le sessionId retourné par le serveur dans le header
   const newSessionId = response.headers.get("X-Session-ID");
   if (newSessionId && !token) {
     localStorage.setItem("cartSessionId", newSessionId);
@@ -70,7 +78,7 @@ export async function addToCart(
   produitId: string,
   quantite: number = 1,
 ): Promise<{ panier: Cart; message: string }> {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
@@ -81,7 +89,8 @@ export async function addToCart(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (sessionId) {
+  // N'envoyer sessionId QUE si pas de token (utilisateur non connecté)
+  if (!token && sessionId) {
     headers["X-Session-ID"] = sessionId;
   }
 
@@ -92,7 +101,12 @@ export async function addToCart(
     body: JSON.stringify({ produitId, quantite }),
   });
 
-  // Stocker le sessionId retourné par le serveur
+  // Gérer les erreurs 401
+  if (response.status === 401) {
+    handleAuthError(response);
+  }
+
+  // Stocker le sessionId retourné par le serveur dans le header
   const newSessionId = response.headers.get("X-Session-ID");
   if (newSessionId && !token) {
     localStorage.setItem("cartSessionId", newSessionId);
@@ -111,7 +125,7 @@ export async function updateCartItem(
   articleId: string,
   quantite: number,
 ): Promise<{ panier: Cart; message: string }> {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
@@ -122,7 +136,8 @@ export async function updateCartItem(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (sessionId) {
+  // N'envoyer sessionId QUE si pas de token (utilisateur non connecté)
+  if (!token && sessionId) {
     headers["X-Session-ID"] = sessionId;
   }
 
@@ -132,6 +147,11 @@ export async function updateCartItem(
     credentials: "include",
     body: JSON.stringify({ quantite }),
   });
+
+  // Gérer les erreurs 401
+  if (response.status === 401) {
+    handleAuthError(response);
+  }
 
   if (!response.ok) {
     const error = await response.json();
@@ -145,7 +165,7 @@ export async function updateCartItem(
 export async function removeFromCart(
   articleId: string,
 ): Promise<{ panier: Cart; message: string }> {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
@@ -156,7 +176,8 @@ export async function removeFromCart(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (sessionId) {
+  // N'envoyer sessionId QUE si pas de token (utilisateur non connecté)
+  if (!token && sessionId) {
     headers["X-Session-ID"] = sessionId;
   }
 
@@ -165,6 +186,11 @@ export async function removeFromCart(
     headers,
     credentials: "include",
   });
+
+  // Gérer les erreurs 401
+  if (response.status === 401) {
+    handleAuthError(response);
+  }
 
   if (!response.ok) {
     const error = await response.json();
@@ -176,7 +202,7 @@ export async function removeFromCart(
 
 // Vider le panier
 export async function clearCart(): Promise<{ message: string }> {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   const sessionId = localStorage.getItem("cartSessionId");
 
   const headers: HeadersInit = {
@@ -187,7 +213,8 @@ export async function clearCart(): Promise<{ message: string }> {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (sessionId) {
+  // N'envoyer sessionId QUE si pas de token (utilisateur non connecté)
+  if (!token && sessionId) {
     headers["X-Session-ID"] = sessionId;
   }
 
@@ -196,6 +223,46 @@ export async function clearCart(): Promise<{ message: string }> {
     headers,
     credentials: "include",
   });
+
+  // Gérer les erreurs 401
+  if (response.status === 401) {
+    handleAuthError(response);
+  }
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Fusionner le panier invité avec le panier utilisateur après connexion
+export async function mergeCartAfterLogin(
+  sessionId: string,
+): Promise<{ panier: Cart; message: string; sessionIdToDelete?: string }> {
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Token d'authentification requis pour fusionner le panier");
+  }
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+
+  const response = await fetch(`${API_URL}/panier/merge`, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({ sessionId }),
+  });
+
+  // Gérer les erreurs 401
+  if (response.status === 401) {
+    handleAuthError(response);
+  }
 
   if (!response.ok) {
     const error = await response.json();

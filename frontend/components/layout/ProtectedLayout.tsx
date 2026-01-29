@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useAuthValidation } from "@/lib/use-auth-validation";
+import { isTokenExpired } from "@/lib/token-utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function ProtectedLayout({
@@ -11,13 +13,30 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, token, logout } = useAuth();
+
+  // Utiliser le hook de validation d'authentification
+  useAuthValidation();
 
   useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
-      router.replace("/login");
+    // Ne pas vérifier pendant le chargement initial
+    if (isLoading) {
+      return;
     }
-  }, [isAuthenticated, isLoading, router]);
+
+    // Vérifier si l'utilisateur est authentifié
+    if (!isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+
+    // Vérifier si le token a expiré
+    if (token && isTokenExpired(token)) {
+      logout();
+      router.replace("/login");
+      return;
+    }
+  }, [isAuthenticated, isLoading, token, router, logout]);
 
   if (isLoading || !isAuthenticated) {
     return <LoadingSpinner />;

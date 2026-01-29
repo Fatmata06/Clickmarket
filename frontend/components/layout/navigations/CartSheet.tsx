@@ -8,20 +8,88 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Trash2, ArrowRight, Minus, Plus } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ShoppingCart,
+  Trash2,
+  ArrowRight,
+  Minus,
+  Plus,
+  Loader2,
+  Package,
+  Truck,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/cart-context";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createCommande } from "@/lib/api/commandes";
+import { getZonesLivraison, type ZoneLivraison } from "@/lib/api/zones";
+import { toast } from "sonner";
 
 export default function CartSheet() {
-  const { cart, isLoading, itemCount, total, updateQuantity, removeItem } =
-    useCart();
+  const {
+    cart,
+    isLoading,
+    itemCount,
+    total,
+    updateQuantity,
+    removeItem,
+    clearCartItems,
+  } = useCart();
+  const router = useRouter();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState<"livraison" | "retrait">(
+    "retrait",
+  );
+  const [zones, setZones] = useState<ZoneLivraison[]>([]);
+  const [selectedZone, setSelectedZone] = useState<string>("");
 
   const cartItems = cart?.articles || [];
   const subtotal = total;
+
+  // Calculer les frais de livraison
+  const deliveryFee =
+    deliveryMode === "livraison" && selectedZone
+      ? zones.find((z) => z._id === selectedZone)?.prix || 0
+      : 0;
+
+  const totalWithDelivery = subtotal + deliveryFee;
+
+  // Charger les zones de livraison
+  useEffect(() => {
+    const loadZones = async () => {
+      try {
+        const data = await getZonesLivraison();
+        setZones(data);
+      } catch (error) {
+        console.error("Erreur chargement zones:", error);
+      }
+    };
+    loadZones();
+  }, []);
 
   const handleQuantityChange = async (
     articleId: string,
@@ -34,9 +102,61 @@ export default function CartSheet() {
     }
   };
 
+  const handleCreateOrder = async () => {
+    if (cartItems.length === 0) {
+      toast.error("Votre panier est vide");
+      return;
+    }
+
+    // Validation pour la livraison
+    if (deliveryMode === "livraison") {
+      if (!selectedZone) {
+        toast.error("Veuillez sélectionner une zone de livraison");
+        return;
+      }
+    }
+
+    try {
+      setIsCreatingOrder(true);
+      const commandeData: {
+        methodeLivraison: "livraison" | "retrait";
+        aLivrer: boolean;
+        adresseLivraison?: string;
+        zoneLivraison?: string;
+      } = {
+        methodeLivraison: deliveryMode,
+        aLivrer: deliveryMode === "livraison",
+      };
+
+      if (deliveryMode === "livraison") {
+        const selectedZoneData = zones.find((z) => z._id === selectedZone);
+        commandeData.adresseLivraison = selectedZoneData?.nom || "À préciser";
+        commandeData.zoneLivraison = selectedZone;
+      }
+
+      const newCommande = await createCommande(commandeData);
+      toast.success("Commande créée avec succès !");
+      setShowCheckoutDialog(false);
+      setSheetOpen(false);
+
+      // Réinitialiser le formulaire
+      setDeliveryMode("retrait");
+      setSelectedZone("");
+
+      router.push(`/commandes/${newCommande._id}`);
+    } catch (error) {
+      console.error("Erreur lors de la création de la commande:", error);
+      toast.error(
+        (error as Error).message || "Erreur lors de la création de la commande",
+      );
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
+
   if (isLoading) {
     return (
-      <Sheet>
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetTrigger asChild>
           <Button
             variant="ghost"
@@ -59,7 +179,7 @@ export default function CartSheet() {
   }
 
   return (
-    <Sheet>
+    <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetTrigger asChild>
         <Button
           variant="ghost"
@@ -99,7 +219,7 @@ export default function CartSheet() {
                     {item.produit?.nomProduit}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {item.prixUnitaire} FCFA / unité
+                    {item.prixUnitaire.toLocaleString()} FCFA / kg
                   </p>
 
                   {/* Quantity Controls */}
@@ -114,8 +234,8 @@ export default function CartSheet() {
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="text-xs font-medium w-6 text-center">
-                      {item.quantite}
+                    <span className="text-xs font-medium min-w-10 text-center">
+                      {item.quantite} kg
                     </span>
                     <Button
                       variant="outline"
@@ -130,7 +250,7 @@ export default function CartSheet() {
                   </div>
 
                   <p className="text-sm font-semibold text-green-600 mt-2">
-                    {item.total} FCFA
+                    {item.total.toLocaleString()} FCFA
                   </p>
                 </div>
                 <Button
@@ -157,42 +277,198 @@ export default function CartSheet() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sous-total</span>
-                <span className="font-semibold">{subtotal} FCFA</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Livraison</span>
-                <span className="font-semibold">—</span>
+                <span className="font-semibold">
+                  {subtotal.toLocaleString()} FCFA
+                </span>
               </div>
               <div className="flex justify-between pt-2 border-t text-base font-bold">
                 <span>Total</span>
-                <span className="text-green-600">{subtotal} FCFA</span>
+                <span className="text-green-600">
+                  {subtotal.toLocaleString()} FCFA
+                </span>
               </div>
             </div>
 
             <div className="space-y-2">
               <SheetClose asChild>
                 <Button
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full text-white bg-green-600 hover:bg-green-700"
                   asChild
                 >
-                  <Link href="/panier">
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Voir le panier
-                  </Link>
-                </Button>
-              </SheetClose>
-              <SheetClose asChild>
-                <Button variant="outline" className="w-full" asChild>
                   <Link href="/produits">
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Continuer les achats
                   </Link>
                 </Button>
               </SheetClose>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  className="flex-1 bg-red-500 dark:bg-red-500 hover:bg-red-600 dark:hover:bg-red-700"
+                  onClick={async () => {
+                    await clearCartItems();
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Vider le panier
+                </Button>
+
+                <Button
+                  className="flex-1 bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700"
+                  onClick={() => setShowCheckoutDialog(true)}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Commander
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </SheetContent>
+
+      <Dialog open={showCheckoutDialog} onOpenChange={setShowCheckoutDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Créer une commande</DialogTitle>
+            <DialogDescription>
+              Choisissez votre mode de récupération et complétez les
+              informations nécessaires
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Mode de livraison */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">
+                Mode de récupération
+              </Label>
+              <RadioGroup
+                value={deliveryMode}
+                onValueChange={(value: string) =>
+                  setDeliveryMode(value as "livraison" | "retrait")
+                }
+                className="grid grid-cols-2 gap-4"
+              >
+                <div>
+                  <RadioGroupItem
+                    value="retrait"
+                    id="retrait"
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="retrait"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600 cursor-pointer"
+                  >
+                    <Package className="mb-3 h-6 w-6" />
+                    <span className="font-medium">Retrait</span>
+                    <span className="text-xs text-muted-foreground text-center mt-2">
+                      Récupérez votre commande en magasin
+                    </span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem
+                    value="livraison"
+                    id="livraison"
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="livraison"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-600 [&:has([data-state=checked])]:border-green-600 cursor-pointer"
+                  >
+                    <Truck className="mb-3 h-6 w-6" />
+                    <span className="font-medium">Livraison</span>
+                    <span className="text-xs text-muted-foreground text-center mt-2">
+                      Livraison à domicile
+                    </span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Formulaire de livraison */}
+            {deliveryMode === "livraison" && (
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                <h3 className="font-semibold">Zone de livraison</h3>
+                <p className="text-sm text-muted-foreground">
+                  Sélectionnez votre zone de livraison. Vous pourrez préciser
+                  votre adresse complète après validation de la commande.
+                </p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="zone">Zone de livraison</Label>
+                  <Select value={selectedZone} onValueChange={setSelectedZone}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez une zone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {zones.map((zone) => (
+                        <SelectItem key={zone._id} value={zone._id}>
+                          {zone.nom} - {zone.prix.toLocaleString()} FCFA
+                          {zone.delaiLivraison && ` (${zone.delaiLivraison})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Récapitulatif */}
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Sous-total</span>
+                <span className="font-medium">
+                  {subtotal.toLocaleString()} FCFA
+                </span>
+              </div>
+              {deliveryMode === "livraison" && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Frais de livraison
+                  </span>
+                  <span className="font-medium">
+                    {selectedZone
+                      ? `${deliveryFee.toLocaleString()} FCFA`
+                      : "—"}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between text-base font-bold border-t pt-2">
+                <span>Total</span>
+                <span className="text-green-600">
+                  {totalWithDelivery.toLocaleString()} FCFA
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCheckoutDialog(false)}
+              disabled={isCreatingOrder}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={handleCreateOrder}
+              disabled={isCreatingOrder}
+            >
+              {isCreatingOrder ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                "Créer la commande"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }

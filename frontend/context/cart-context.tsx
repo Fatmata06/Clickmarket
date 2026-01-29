@@ -67,6 +67,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     refreshCart();
   }, [refreshCart]);
 
+  // Écouter les changements d'authentification pour recharger le panier après fusion
+  useEffect(() => {
+    const handleAuthChange = () => {
+      console.log("🔄 Auth changed, refreshing cart after merge...");
+      refreshCart();
+    };
+
+    window.addEventListener("auth-changed", handleAuthChange);
+    return () => window.removeEventListener("auth-changed", handleAuthChange);
+  }, [refreshCart]);
+
   // Ajouter un produit au panier
   const addToCart = async (produitId: string, quantite: number = 1) => {
     try {

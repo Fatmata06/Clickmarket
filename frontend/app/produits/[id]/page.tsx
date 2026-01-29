@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -17,13 +18,28 @@ import {
   Plus,
   Minus,
   ChevronLeft,
+  Edit,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 // import { Breadcrumb } from "@/components/ui/breadcrumb";
 import Breadcrumb from "@/components/breadcrumb";
 import { useProduct } from "@/hooks/useProduct";
 import { useCart } from "@/context/cart-context";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useProducts } from "@/hooks/useProducts";
+import { deleteProduit } from "@/lib/api/produits";
+import { toast } from "sonner";
 
 export default function ProductDetailPage({
   params,
@@ -31,6 +47,7 @@ export default function ProductDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const { product, isLoading, error } = useProduct(resolvedParams.id);
   const { products: relatedProducts } = useProducts({ limit: 3 });
   const { addToCart } = useCart();
@@ -39,6 +56,25 @@ export default function ProductDetailPage({
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Vérifier si l'utilisateur est admin ou fournisseur
+  useEffect(() => {
+    const authData = localStorage.getItem("clickmarket_auth");
+    if (authData) {
+      try {
+        const { user } = JSON.parse(authData);
+        setIsAdmin(user?.role === "admin" || user?.role === "fournisseur");
+      } catch (error) {
+        console.error(
+          "Erreur lors de la lecture des données utilisateur:",
+          error,
+        );
+      }
+    }
+  }, []);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -49,6 +85,25 @@ export default function ProductDetailPage({
       console.error("Erreur lors de l'ajout au panier:", error);
     } finally {
       setAddingToCart(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!product) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteProduit(product._id);
+      toast.success("Produit supprimé avec succès");
+      router.push("/produits/gestion");
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      toast.error(
+        (error as Error).message || "Erreur lors de la suppression du produit",
+      );
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -181,6 +236,29 @@ export default function ProductDetailPage({
 
           {/* Product Info */}
           <div className="space-y-6">
+            {/* Actions Admin/Fournisseur */}
+            {isAdmin && (
+              <div className="flex gap-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() =>
+                    router.push(`/produits/modifier/${product._id}`)
+                  }
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Modifier le produit
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer
+                </Button>
+              </div>
+            )}
+
             {/* Brand & Category */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -438,6 +516,33 @@ export default function ProductDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Confirmer la suppression
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est
+              irréversible et supprimera également toutes les images et données
+              associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

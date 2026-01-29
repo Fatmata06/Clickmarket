@@ -8,6 +8,9 @@ import React, {
   useState,
   useCallback,
 } from "react";
+import { mergeCartAfterLogin } from "@/lib/api/cart";
+import { isTokenExpired } from "@/lib/token-utils";
+import { authErrorEvent } from "@/lib/api/auth-error-handler";
 
 const STORAGE_KEY = "clickmarket_auth";
 const API_BASE_URL =
@@ -61,13 +64,40 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as { user?: User; token?: string };
-        setUser(parsed.user ?? null);
-        setToken(parsed.token ?? null);
+
+        // Vérifier si le token a expiré
+        if (parsed.token && isTokenExpired(parsed.token)) {
+          // Token expiré, le nettoyer
+          localStorage.removeItem(STORAGE_KEY);
+          setUser(null);
+          setToken(null);
+        } else {
+          // Token valide, charger les données
+          setUser(parsed.user ?? null);
+          setToken(parsed.token ?? null);
+        }
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
     setHydrated(true);
+  }, []);
+
+  // Écouter les événements d'erreur d'authentification globaux
+  useEffect(() => {
+    const handleAuthErrorEvent = () => {
+      // Déconnecter l'utilisateur si une erreur 401 est détectée
+      setUser(null);
+      setToken(null);
+      setError("Session expirée");
+      localStorage.removeItem(STORAGE_KEY);
+    };
+
+    authErrorEvent.addEventListener("authError", handleAuthErrorEvent);
+
+    return () => {
+      authErrorEvent.removeEventListener("authError", handleAuthErrorEvent);
+    };
   }, []);
 
   const persist = (nextToken: string | null, nextUser?: User | null) => {
@@ -116,8 +146,23 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       persist(data.token, nextUser);
 
-      // Nettoyer le sessionId du panier invité lors de la connexion
+      // Fusionner les paniers : panier invité + panier utilisateur
+      const sessionId = localStorage.getItem("cartSessionId");
+      if (sessionId) {
+        try {
+          await mergeCartAfterLogin(sessionId);
+          console.log("✅ Paniers fusionnés avec succès");
+        } catch (mergeError) {
+          console.error("❌ Erreur fusion paniers:", mergeError);
+          // Ne pas bloquer la connexion si la fusion échoue
+        }
+      }
+
+      // Nettoyer le sessionId du panier invité après fusion
       localStorage.removeItem("cartSessionId");
+
+      // Déclencher un événement pour recharger le panier fusionné
+      window.dispatchEvent(new Event("auth-changed"));
 
       return nextUser;
     } catch (err) {

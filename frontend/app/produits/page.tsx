@@ -2,16 +2,37 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ProductsGrid from "@/components/products/ProductGrid";
 import ProductsFilters from "@/components/products/ProductsFilters";
 import ProductsHeader from "@/components/products/ProducstHeader";
 import { Button } from "@/components/ui/button";
-import { Filter, Grid } from "lucide-react";
+import { Filter, Grid, Plus, Package } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProducts } from "@/hooks/useProducts";
 
 export default function ProduitsPage() {
+  const router = useRouter();
   const [sortBy, setSortBy] = useState("popular");
+
+  // Initialiser l'état fournisseur depuis localStorage
+  const [isFournisseur] = useState(() => {
+    try {
+      const authData = localStorage.getItem("clickmarket_auth");
+      if (authData) {
+        const { user } = JSON.parse(authData);
+        return user?.role === "fournisseur";
+      }
+      return false;
+    } catch (error) {
+      console.error(
+        "Erreur lors de la lecture des données utilisateur:",
+        error,
+      );
+      return false;
+    }
+  });
+
   const { total } = useProducts({
     limit: 12,
   });
@@ -20,7 +41,30 @@ export default function ProduitsPage() {
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-background dark:from-gray-900 dark:to-gray-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <ProductsHeader />
+        <div className="flex items-center justify-between mb-8">
+          <ProductsHeader />
+
+          {/* Bouton Fournisseur */}
+          {isFournisseur && (
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push("/fournisseur/produits")}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Package className="h-4 w-4" />
+                Mes produits
+              </Button>
+              <Button
+                onClick={() => router.push("/fournisseur/produits/nouveau")}
+                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nouveau produit
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col lg:flex-row gap-8 mt-8">
           {/* Sidebar Filters */}

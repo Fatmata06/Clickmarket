@@ -8,6 +8,8 @@ const {
   deleteProduit,
   supprimerImage,
   getCategories,
+  accepterProduit,
+  refuserProduit,
 } = require("../controllers/produitController");
 const { uploadProduit } = require("../config/multer");
 const { isRole, auth } = require("../middleware/auth");
@@ -253,6 +255,83 @@ router.get("/", getAllProduits);
  */
 router.get("/categories", getCategories);
 
+// Accepter un produit (Admin uniquement)
+/**
+ * @swagger
+ * /api/produits/{id}/accepter:
+ *   patch:
+ *     summary: Accepter un produit
+ *     tags: [Produits]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Permet à un administrateur d'accepter un produit.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du produit
+ *     responses:
+ *       200:
+ *         description: Produit accepté avec succès
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé - Réservé aux admins
+ *       404:
+ *         description: Produit non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.patch("/:id/accepter", auth, isRole(["admin"]), accepterProduit);
+
+// Refuser un produit (Admin uniquement)
+/**
+ * @swagger
+ * /api/produits/{id}/refuser:
+ *   patch:
+ *     summary: Refuser un produit
+ *     tags: [Produits]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Permet à un administrateur de refuser un produit avec une raison.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du produit
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - raisonRefus
+ *             properties:
+ *               raisonRefus:
+ *                 type: string
+ *                 description: Raison du refus du produit
+ *                 example: "Images de mauvaise qualité"
+ *     responses:
+ *       200:
+ *         description: Produit refusé avec succès
+ *       400:
+ *         description: Raison de refus manquante
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé - Réservé aux admins
+ *       404:
+ *         description: Produit non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.patch("/:id/refuser", auth, isRole(["admin"]), refuserProduit);
+
 /**
  * @swagger
  * /api/produits/{id}:
@@ -369,7 +448,7 @@ router.get("/:id", getProduitById);
 router.put(
   "/:id",
   auth,
-  isRole("fournisseur"),
+  isRole(["admin", "fournisseur"]),
   uploadProduit.array("images", 5),
   updateProduit,
 );

@@ -60,6 +60,20 @@ const produitSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    // Statut de validation par l'administrateur
+    statutValidation: {
+      type: String,
+      enum: ["en_attente", "accepte", "refuse"],
+      default: "accepte", // Par défaut accepté - Changer en "en_attente" pour bloquer les produits tant que l'admin ne les valide pas
+    },
+    raisonRefus: {
+      type: String,
+      default: null,
+    },
+    dateValidation: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );

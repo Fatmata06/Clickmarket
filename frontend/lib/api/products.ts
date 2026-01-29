@@ -1,3 +1,5 @@
+import { handleAuthError } from "./auth-error-handler";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export interface Product {
@@ -87,6 +89,9 @@ export async function getAllProducts(
     );
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleAuthError(response);
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
@@ -120,6 +125,9 @@ export async function getProductById(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleAuthError(response);
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
@@ -149,6 +157,9 @@ export async function createProduct(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleAuthError(response);
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
@@ -179,6 +190,9 @@ export async function updateProduct(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleAuthError(response);
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
@@ -207,6 +221,9 @@ export async function deleteProduct(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleAuthError(response);
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
@@ -234,6 +251,9 @@ export async function getCategories(): Promise<{
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleAuthError(response);
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 

@@ -2,6 +2,13 @@ const Panier = require("../models/Panier");
 const Produit = require("../models/Produit");
 const mongoose = require("mongoose");
 
+// Helper pour ajouter le header X-Session-ID dans la réponse
+const addSessionIdHeader = (res, req) => {
+  if (req.sessionId && !req.user) {
+    res.setHeader("X-Session-ID", req.sessionId);
+  }
+};
+
 // Fonction utilitaire pour enrichir le panier avec les totaux
 const enrichirPanierAvecTotaux = (panier) => {
   if (!panier || !panier.articles) return panier;
@@ -11,10 +18,11 @@ const enrichirPanierAvecTotaux = (panier) => {
 
   // PUIS ajouter le total à chaque article
   if (panierObj.articles) {
-    panierObj.articles = panierObj.articles.map((article) => ({
-      ...article,
-      total: article.quantite * article.prixUnitaire,
-    }));
+    panierObj.articles = panierObj.articles.map((article) => {
+      // Ajouter simplement le champ total sans recréer l'objet
+      article.total = article.quantite * article.prixUnitaire;
+      return article;
+    });
   }
 
   return panierObj;
@@ -106,6 +114,7 @@ exports.getPanier = async (req, res) => {
     // Enrichir le panier avec les totaux
     const panierEnrichi = enrichirPanierAvecTotaux(panier);
 
+    addSessionIdHeader(res, req);
     res.json({ panier: panierEnrichi });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -163,6 +172,7 @@ exports.ajouterArticle = async (req, res) => {
     // Enrichir avec totaux
     const panierEnrichi = enrichirPanierAvecTotaux(panier);
 
+    addSessionIdHeader(res, req);
     res.json({ message, panier: panierEnrichi });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -226,6 +236,7 @@ exports.modifierArticle = async (req, res) => {
     // Enrichir avec totaux
     const panierEnrichi = enrichirPanierAvecTotaux(panier);
 
+    addSessionIdHeader(res, req);
     res.json({
       message: "Article modifié avec succès",
       panier: panierEnrichi,
@@ -266,6 +277,7 @@ exports.supprimerArticle = async (req, res) => {
     // Enrichir avec totaux
     const panierEnrichi = enrichirPanierAvecTotaux(panier);
 
+    addSessionIdHeader(res, req);
     res.json({
       message: "Article supprimé avec succès",
       panier: panierEnrichi,
@@ -292,6 +304,7 @@ exports.viderPanier = async (req, res) => {
     // Enrichir avec totaux (panier vide mais cohérent)
     const panierEnrichi = enrichirPanierAvecTotaux(panier);
 
+    addSessionIdHeader(res, req);
     res.json({ message: "Panier vidé avec succès", panier: panierEnrichi });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -358,9 +371,10 @@ exports.mergePanierAfterLogin = async (req, res) => {
     await panierUtilisateur.save();
     await panierUtilisateur.populate("articles.produit");
 
-    // 6. Supprimer le panier invité
+    // 6. Vider le panier invité
     if (panierInvite) {
-      await panierInvite.deleteOne();
+      panierInvite.articles = [];
+      await panierInvite.save();
     }
 
     res.json({

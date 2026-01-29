@@ -11,6 +11,7 @@ const fournisseurRoutes = require("./src/routes/fournisseurRoutes");
 const panierRoutes = require("./src/routes/panierRoutes");
 const commandeRoutes = require("./src/routes/commandeRoutes");
 const zoneLivraisonRoutes = require("./src/routes/zoneLivraisonRoutes");
+const adminRoutes = require("./src/routes/adminRoutes");
 
 const app = express();
 
@@ -21,7 +22,13 @@ connectDB();
 const frontendUrls = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map((url) => url.trim())
   : ["http://localhost:3000"];
-app.use(cors({ origin: frontendUrls, credentials: true }));
+app.use(
+  cors({
+    origin: frontendUrls,
+    credentials: true,
+    exposedHeaders: ["X-Session-ID"], // Exposer le header personnalisé
+  }),
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -57,6 +64,7 @@ app.use("/api/fournisseurs", fournisseurRoutes);
 app.use("/api/panier", panierRoutes);
 app.use("/api/commandes", commandeRoutes);
 app.use("/api/zones-livraison", zoneLivraisonRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Route test
 app.get("/", (req, res) => {
