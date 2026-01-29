@@ -213,7 +213,8 @@ export default function CommandeDetailsPage() {
   }
 
   const canCancel =
-    commande.statut === "en_attente" || commande.statut === "confirmee";
+    commande.statutCommande === "en_attente" ||
+    commande.statutCommande === "confirmee";
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -245,7 +246,7 @@ export default function CommandeDetailsPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {getStatusBadge(commande.statut)}
+          {getStatusBadge(commande.statutCommande)}
           {canCancel && (
             <Button
               variant="destructive"
