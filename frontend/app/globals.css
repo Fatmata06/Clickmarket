@@ -26,7 +26,7 @@
   --ring: 142.1 76.2% 36.3%;
   --radius: 0.5rem;
   --space-page-x: 1rem;
-  --space-page-x-md: 1.5rem;
+
   --space-page-x-lg: 2rem;
   --space-page-y: 3rem;
   --space-page-y-md: 2rem;
@@ -42,6 +42,18 @@
 
 .dark {
   --background: 222.2 84% 4.9%;
+  --button-default: 142.1 76.2% 36.3%;
+  --button-default-fg: 355.7 100% 97.3%;
+  --button-hover: 133.77 57.74% 29.02%;
+  --input-bg: 220 13% 91%;
+  --input-bg-dark: 217.2 32.6% 17.5%;
+  --input-border: 220 13% 91%;
+  --input-border-dark: 217.2 32.6% 17.5%;
+  --footer-bg: 222.2 84% 4.9%;
+  --footer-fg: 210 20% 98%;
+  --footer-text-muted: 215 20.2% 65.1%;
+  --footer-border: 217.2 32.6% 17.5%;
+  --footer-accent: 142.1 76.2% 36.3%;
   --foreground: 210 20% 98%;
   --card: 222.2 84% 4.9%;
   --card-foreground: 210 20% 98%;
@@ -55,7 +67,7 @@
   --muted-foreground: 215 20.2% 65.1%;
   --accent: 217.2 32.6% 17.5%;
   --accent-foreground: 210 20% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 20% 98%;
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
@@ -163,6 +175,14 @@
 
   .input-surface {
     @apply bg-background text-foreground border border-border;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+
+  .btn-destructive {
+    @apply bg-destructive/90 text-destructive-foreground hover:bg-destructive transition-colors;
   }
 
   .page-wrapper {
