@@ -198,7 +198,7 @@ export default function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full h-full flex flex-col">
+      <SheetContent side="right" className="w-full sm:w-100 flex flex-col">
         <SheetHeader>
           <SheetTitle>Panier ({itemCount} articles)</SheetTitle>
         </SheetHeader>
