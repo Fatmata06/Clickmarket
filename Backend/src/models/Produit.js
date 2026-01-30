@@ -47,7 +47,20 @@ const produitSchema = new mongoose.Schema(
     tags: [
       {
         type: String,
-        enum: ["Bio", "Local", "Exotique", "Frais", "Promo", "Nouveau"],
+        enum: [
+          "Bio",
+          "Local",
+          "Exotique",
+          "Frais",
+          "Promo",
+          "Nouveau",
+          "bio",
+          "local",
+          "exotique",
+          "frais",
+          "promo",
+          "nouveau",
+        ],
       },
     ],
     images: [
@@ -64,7 +77,7 @@ const produitSchema = new mongoose.Schema(
     statutValidation: {
       type: String,
       enum: ["en_attente", "accepte", "refuse"],
-      default: "accepte", // Par défaut accepté - Changer en "en_attente" pour bloquer les produits tant que l'admin ne les valide pas
+      default: "en_attente",
     },
     raisonRefus: {
       type: String,

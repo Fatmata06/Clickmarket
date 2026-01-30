@@ -17,7 +17,7 @@ export default function CallToActionSection() {
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="dark:bg-gray-900 bg-white rounded-lg p-4 sm:p-8"
+            className="surface-card rounded-lg p-4 sm:p-8"
           >
             <div className="w-12 sm:w-16 h-12 sm:h-16 bg-green-600 rounded-xl flex items-center justify-center mb-6">
               <ShoppingCart className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
@@ -50,7 +50,7 @@ export default function CallToActionSection() {
 
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="dark:bg-gray-900 bg-white rounded-lg p-4 sm:p-8"
+            className="surface-card rounded-lg p-4 sm:p-8"
           >
             <div className="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center mb-6">
               <Package className="w-8 h-8 text-white" />

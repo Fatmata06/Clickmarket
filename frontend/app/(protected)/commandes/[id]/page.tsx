@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -15,6 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Breadcrumb from "@/components/breadcrumb";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ArrowLeft,
   Package,
@@ -33,6 +40,7 @@ import {
   cancelCommande,
   type Commande,
 } from "@/lib/api/commandes";
+import { formatFCFA } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function CommandeDetailsPage() {
@@ -43,6 +51,7 @@ export default function CommandeDetailsPage() {
   const [commande, setCommande] = useState<Commande | null>(null);
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   useEffect(() => {
     loadCommande();
@@ -53,6 +62,7 @@ export default function CommandeDetailsPage() {
     try {
       setLoading(true);
       const data = await getCommande(commandeId);
+      console.log("Commande chargée:", data);
       setCommande(data);
     } catch (error) {
       console.error("Erreur lors du chargement de la commande:", error);
@@ -67,14 +77,11 @@ export default function CommandeDetailsPage() {
   const handleCancelCommande = async () => {
     if (!commande) return;
 
-    if (!confirm("Êtes-vous sûr de vouloir annuler cette commande ?")) {
-      return;
-    }
-
     try {
       setCanceling(true);
       await cancelCommande(commande._id);
       toast.success("Commande annulée avec succès");
+      setCancelDialogOpen(false);
       router.push("/commandes");
     } catch (error) {
       console.error("Erreur lors de l'annulation:", error);
@@ -129,7 +136,7 @@ export default function CommandeDetailsPage() {
       annulee: {
         label: "Annulée",
         variant:
-          "bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800",
+          "bg-destructive/10 text-destructive border-destructive/30 dark:bg-destructive/20",
         icon: XCircle,
       },
     };
@@ -162,7 +169,7 @@ export default function CommandeDetailsPage() {
       echoue: {
         label: "Échoué",
         variant:
-          "bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800",
+          "bg-destructive/10 text-destructive border-destructive/30 dark:bg-destructive/20",
       },
     };
 
@@ -191,7 +198,7 @@ export default function CommandeDetailsPage() {
 
   if (!commande) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="page-container-tight">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
@@ -217,7 +224,7 @@ export default function CommandeDetailsPage() {
     commande.statutCommande === "confirmee";
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="page-container-tight stack-6">
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} />
 
@@ -250,10 +257,10 @@ export default function CommandeDetailsPage() {
           {canCancel && (
             <Button
               variant="destructive"
-              onClick={handleCancelCommande}
+              onClick={() => setCancelDialogOpen(true)}
               disabled={canceling}
             >
-              {canceling ? "Annulation..." : "Annuler la commande"}
+              Annuler la commande
             </Button>
           )}
         </div>
@@ -277,36 +284,18 @@ export default function CommandeDetailsPage() {
             <CardContent>
               <div className="space-y-4">
                 {commande.articles.map((article, index) => (
-                  <div
+                  <Link
                     key={index}
-                    className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    href={`/produits/${article.produit._id}`}
+                    className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 hover:border-green-600 transition-colors cursor-pointer group"
                   >
-                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                      {article.produit.images && article.produit.images[0] ? (
-                        <Image
-                          src={article.produit.images[0]}
-                          alt={article.produit.nom}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
+                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-muted shrink-0 group-hover:ring-2 group-hover:ring-green-600 transition-all flex items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/produits/${article.produit._id}`}
-                        className="font-medium hover:text-green-600 transition-colors line-clamp-2"
-                      >
-                        {article.produit.nom}
-                      </Link>
-                      {article.produit.fournisseur && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Vendu par {article.produit.fournisseur.nom}
-                        </p>
-                      )}
+                      <h3 className="font-semibold text-sm group-hover:text-green-600 transition-colors line-clamp-2">
+                        {article.produit.nomProduit}
+                      </h3>
                       <div className="flex items-center gap-3 mt-2 text-sm">
                         <span className="text-muted-foreground">
                           Quantité:{" "}
@@ -318,24 +307,24 @@ export default function CommandeDetailsPage() {
                         <span className="text-muted-foreground">
                           Prix unitaire:{" "}
                           <span className="font-medium text-foreground">
-                            {article.prixUnitaire.toFixed(2)} €
+                            {formatFCFA(article.prixUnitaire)}
                           </span>
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-green-600">
-                        {article.total.toFixed(2)} €
+                        {formatFCFA(article.total)}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </CardContent>
           </Card>
 
           {/* Adresse de livraison */}
-          {commande.adresseLivraison && (
+          {commande.aLivrer && commande.adresseLivraison && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -344,15 +333,18 @@ export default function CommandeDetailsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">{commande.adresseLivraison.rue}</p>
-                  <p>
-                    {commande.adresseLivraison.codePostal}{" "}
-                    {commande.adresseLivraison.ville}
+                <div className="space-y-2 text-sm">
+                  <p className="font-medium text-foreground">
+                    {typeof commande.adresseLivraison === "string"
+                      ? commande.adresseLivraison
+                      : `${commande.adresseLivraison.rue}, ${commande.adresseLivraison.codePostal} ${commande.adresseLivraison.ville}`}
                   </p>
-                  {commande.adresseLivraison.pays && (
+                  {commande.zoneLivraison && (
                     <p className="text-muted-foreground">
-                      {commande.adresseLivraison.pays}
+                      Zone:{" "}
+                      {typeof commande.zoneLivraison === "string"
+                        ? commande.zoneLivraison
+                        : commande.zoneLivraison.nom}
                     </p>
                   )}
                 </div>
@@ -376,10 +368,9 @@ export default function CommandeDetailsPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sous-total</span>
                   <span className="font-medium">
-                    {(commande.montantTotal - commande.fraisLivraison).toFixed(
-                      2,
-                    )}{" "}
-                    €
+                    {formatFCFA(
+                      commande.montantTotal - commande.fraisLivraison,
+                    )}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -388,7 +379,7 @@ export default function CommandeDetailsPage() {
                   </span>
                   <span className="font-medium">
                     {commande.fraisLivraison > 0
-                      ? `${commande.fraisLivraison.toFixed(2)} €`
+                      ? formatFCFA(commande.fraisLivraison)
                       : "Gratuit"}
                   </span>
                 </div>
@@ -396,7 +387,7 @@ export default function CommandeDetailsPage() {
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Total</span>
                     <span className="text-xl font-bold text-green-600">
-                      {commande.montantTotal.toFixed(2)} €
+                      {formatFCFA(commande.montantTotal)}
                     </span>
                   </div>
                 </div>
@@ -408,7 +399,7 @@ export default function CommandeDetailsPage() {
                     <span className="text-muted-foreground">
                       Statut du paiement
                     </span>
-                    {getPaymentBadge(commande.statutPaiement)}
+                    {getPaymentBadge(commande.paiement.statut)}
                   </div>
                   {commande.methodePaiement && (
                     <div className="flex items-center justify-between text-sm">
@@ -461,16 +452,26 @@ export default function CommandeDetailsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Mode</span>
                 <Badge variant="outline" className="capitalize">
-                  {commande.methodeLivraison === "livraison"
-                    ? "Livraison"
-                    : "Retrait"}
+                  {commande.aLivrer ? "À livrer" : "Retrait"}
                 </Badge>
               </div>
-              {commande.zoneLivraison && (
+              {commande.aLivrer && commande.zoneLivraison && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Zone</span>
                   <span className="font-medium">
-                    {commande.zoneLivraison.nom}
+                    {typeof commande.zoneLivraison === "string"
+                      ? commande.zoneLivraison
+                      : commande.zoneLivraison.nom}
+                  </span>
+                </div>
+              )}
+              {commande.aLivrer && commande.fraisLivraison > 0 && (
+                <div className="flex items-center justify-between border-t border-border pt-2">
+                  <span className="text-muted-foreground">
+                    Frais de livraison
+                  </span>
+                  <span className="font-medium">
+                    {formatFCFA(commande.fraisLivraison)}
                   </span>
                 </div>
               )}
@@ -488,6 +489,36 @@ export default function CommandeDetailsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Dialogue de confirmation d'annulation */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer l&apos;annulation</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir annuler cette commande ? Cette action est
+              irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setCancelDialogOpen(false)}
+              disabled={canceling}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelCommande}
+              disabled={canceling}
+              className="btn-destructive"
+            >
+              {canceling ? "Annulation..." : "Confirmer l'annulation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

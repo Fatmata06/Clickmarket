@@ -26,7 +26,7 @@ interface CartContextType {
   addToCart: (produitId: string, quantite?: number) => Promise<void>;
   updateQuantity: (articleId: string, quantite: number) => Promise<void>;
   removeItem: (articleId: string) => Promise<void>;
-  clearCartItems: () => Promise<void>;
+  clearCartItems: (silent?: boolean) => Promise<void>;
   refreshCart: () => Promise<void>;
 }
 
@@ -77,6 +77,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("auth-changed", handleAuthChange);
     return () => window.removeEventListener("auth-changed", handleAuthChange);
   }, [refreshCart]);
+
+  // Écouter l'événement de connexion admin pour vider le panier
+  useEffect(() => {
+    const handleAdminLogin = () => {
+      console.log("🚫 Admin logged in, clearing cart...");
+      setCart(null);
+    };
+
+    window.addEventListener("admin-login-clear-cart", handleAdminLogin);
+    return () =>
+      window.removeEventListener("admin-login-clear-cart", handleAdminLogin);
+  }, []);
 
   // Ajouter un produit au panier
   const addToCart = async (produitId: string, quantite: number = 1) => {
@@ -130,18 +142,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Vider le panier
-  const clearCartItems = async () => {
+  const clearCartItems = async (silent: boolean = false) => {
     try {
       await clearCart();
       setCart(null);
-      toast.success("Panier vidé");
+      if (!silent) {
+        toast.success("Panier vidé");
+      }
     } catch (error) {
       console.error("Erreur lors du vidage du panier:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Erreur lors du vidage du panier",
-      );
+      if (!silent) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Erreur lors du vidage du panier",
+        );
+      }
       throw error;
     }
   };

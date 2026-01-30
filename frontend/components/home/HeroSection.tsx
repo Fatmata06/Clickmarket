@@ -1,17 +1,17 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { ArrowRight, ShoppingCart, Truck, ShieldCheck } from 'lucide-react'
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, ShoppingCart } from "lucide-react";
 // import { Badge } from '@/components/ui/badge'
-import Image from 'next/image'
+import Image from "next/image";
 
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-r from-green-100/20 to-emerald-100/10 dark:from-green-900/10 dark:to-emerald-900/5" />
-      
+      <div className="absolute inset-0 bg-linear-to-r from-green-100/20 to-emerald-100/10 dark:from-green-900/10 dark:to-emerald-900/5" />
+
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-32 lg:pb-48">
         <div className="lg:grid lg:grid-cols-2 lg:gap-12 items-center">
           {/* Left Content */}
@@ -24,49 +24,70 @@ export default function HeroSection() {
             {/* <Badge variant="secondary" className="mb-4 px-4 py-1 text-sm dark:bg-gray-800">
               🚀 Nouveau sur ClickMarket
             </Badge> */}
-            
+
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Des fruits & légumes{' '}
-              <span className="text-green-600 dark:text-green-400">frais</span> livrés chez vous
+              Des fruits & légumes{" "}
+              <span className="text-green-600 dark:text-green-400">frais</span>{" "}
+              livrés chez vous
             </h1>
-            
+
             <p className="mt-6 text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl">
-              Découvrez notre sélection de produits frais directement des producteurs locaux. 
-              Livraison rapide dans toutes les zones de la ville.
+              Découvrez notre sélection de produits frais directement des
+              producteurs locaux. Livraison rapide dans toutes les zones de la
+              ville.
             </p>
-            
+
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button size="lg" className="gap-2 px-8 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white">
+              <Button
+                size="lg"
+                className="gap-2 px-8 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
+              >
                 <ShoppingCart className="h-5 w-5" />
                 Commander maintenant
                 <ArrowRight className="h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="gap-2 px-8 border-black-50 hover:bg-black/90 hover:text-white dark:border-gray-600 dark:text-gray-300 hover:dark:bg-gray-700">
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2 px-8 border-border text-foreground hover:bg-muted"
+              >
                 Voir les produits
               </Button>
             </div>
-            
+
             {/* Stats */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
               className="mt-12 grid grid-cols-3 gap-4"
             >
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">500+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Produits frais</div>
+                <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
+                  500+
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Produits frais
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">24h</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Livraison rapide</div>
+                <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
+                  24h
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Livraison rapide
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">100%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Satisfaction</div>
+                <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
+                  100%
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Satisfaction
+                </div>
               </div>
             </motion.div>
-            
+
             {/* Features */}
             {/* <div className="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -79,7 +100,7 @@ export default function HeroSection() {
               </div>
             </div> */}
           </motion.div>
-          
+
           {/* Right Image */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -87,7 +108,7 @@ export default function HeroSection() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mt-12 lg:mt-0 relative"
           >
-            <div className="relative h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-900/50">
+            <div className="relative h-100 lg:h-125 rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-900/50">
               <Image
                 src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800"
                 alt="Fruits et légumes frais"
@@ -96,21 +117,25 @@ export default function HeroSection() {
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-              
+              <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
+
               {/* Floating Badge */}
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute top-6 right-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full p-4 shadow-lg dark:shadow-gray-900"
+                className="absolute top-6 right-6 surface-glass rounded-full p-4 shadow-lg dark:shadow-gray-900"
               >
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">-20%</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Première commande</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    -20%
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    Première commande
+                  </div>
                 </div>
               </motion.div>
             </div>
-            
+
             {/* Decorative Elements */}
             <motion.div
               animate={{ rotate: 360 }}
@@ -125,7 +150,7 @@ export default function HeroSection() {
           </motion.div>
         </div>
       </div>
-      
+
       {/* Wave Divider */}
       <div className="absolute bottom-0 left-0 right-0">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
@@ -138,5 +163,5 @@ export default function HeroSection() {
         </svg>
       </div>
     </section>
-  )
+  );
 }

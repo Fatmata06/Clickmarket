@@ -12,6 +12,7 @@ const panierRoutes = require("./src/routes/panierRoutes");
 const commandeRoutes = require("./src/routes/commandeRoutes");
 const zoneLivraisonRoutes = require("./src/routes/zoneLivraisonRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
+const favoriRoutes = require("./src/routes/favoriRoutes");
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use("/api/panier", panierRoutes);
 app.use("/api/commandes", commandeRoutes);
 app.use("/api/zones-livraison", zoneLivraisonRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/favoris", favoriRoutes);
 
 // Route test
 app.get("/", (req, res) => {

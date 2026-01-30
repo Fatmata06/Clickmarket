@@ -40,7 +40,7 @@ export interface Commande {
   articles: Array<{
     produit: {
       _id: string;
-      nom: string;
+      nomProduit: string;
       prix: number;
       images?: string[];
       fournisseur?: {
@@ -61,16 +61,10 @@ export interface Commande {
     | "expediee"
     | "livree"
     | "annulee";
-  statut?: // Alias pour compatibilité
-    "en_attente" | "confirmee" | "en_cours" | "expediee" | "livree" | "annulee";
-  statutPaiement:
-    | "en_attente"
-    | "en_cours"
-    | "reussi"
-    | "echoue"
-    | "rembourse"
-    | "annule"
-    | "paye";
+  paiement: {
+    statut: "en_attente" | "en_cours" | "paye" | "echoue" | "rembourse";
+    montantPaye: number;
+  };
   methodePaiement?: string;
   adresseLivraison?: {
     rue: string;
@@ -79,12 +73,19 @@ export interface Commande {
     pays: string;
   };
   methodeLivraison: "livraison" | "retrait";
+  aLivrer?: boolean;
   zoneLivraison?: {
     _id: string;
     nom: string;
   };
   dateCommande: string;
   dateLivraison?: string;
+  historique?: Array<{
+    statut: string;
+    date: string;
+    changedBy?: string;
+    raison?: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -98,10 +99,29 @@ export async function createCommande(
   try {
     const authData = localStorage.getItem("clickmarket_auth");
     if (!authData) {
-      throw new Error("Non authentifié");
+      throw new Error("Non authentifié. Veuillez vous reconnecter.");
     }
 
-    const { token } = JSON.parse(authData);
+    let token: string;
+    try {
+      const parsed = JSON.parse(authData);
+      token = parsed.token;
+      if (!token) {
+        throw new Error("Token manquant");
+      }
+    } catch (parseError) {
+      console.error("Erreur parsing token:", parseError);
+      throw new Error("Token invalide. Veuillez vous reconnecter.");
+    }
+
+    // Convertir methodeLivraison en aLivrer
+    const bodyData = { ...data };
+    if (data.methodeLivraison === "retrait") {
+      bodyData.aLivrer = false;
+    } else if (data.methodeLivraison === "livraison") {
+      bodyData.aLivrer = true;
+    }
+    delete bodyData.methodeLivraison;
 
     const response = await fetch(`${API_URL}/commandes`, {
       method: "POST",
@@ -109,14 +129,19 @@ export async function createCommande(
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(bodyData),
     });
 
     if (!response.ok) {
-      handleAuthError(response);
       const errorData = await response
         .json()
         .catch(() => ({ message: "Erreur serveur" }));
+
+      // N'appeler handleAuthError que si c'est vraiment une erreur 401
+      if (response.status === 401) {
+        handleAuthError(response);
+      }
+
       throw new Error(errorData.message || `Erreur ${response.status}`);
     }
 
@@ -201,7 +226,10 @@ export async function getCommande(id: string): Promise<Commande> {
 /**
  * Annuler une commande (seulement si statut = en_attente ou confirmee)
  */
-export async function cancelCommande(id: string): Promise<void> {
+export async function cancelCommande(
+  id: string,
+  raison?: string,
+): Promise<void> {
   try {
     const authData = localStorage.getItem("clickmarket_auth");
     if (!authData) {
@@ -213,8 +241,10 @@ export async function cancelCommande(id: string): Promise<void> {
     const response = await fetch(`${API_URL}/commandes/${id}`, {
       method: "DELETE",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify({ raison: raison || "" }),
     });
 
     if (!response.ok) {
@@ -232,6 +262,7 @@ export async function cancelCommande(id: string): Promise<void> {
 
 /**
  * Mettre à jour le statut d'une commande (admin/fournisseur uniquement)
+ * Cela met à jour automatiquement l'historique de la commande
  */
 export async function updateCommandeStatus(
   id: string,
@@ -239,9 +270,10 @@ export async function updateCommandeStatus(
     | "en_attente"
     | "confirmee"
     | "en_preparation"
-    | "en_livraison"
+    | "expediee"
     | "livree"
     | "annulee",
+  raison?: string,
 ): Promise<Commande> {
   try {
     const authData = localStorage.getItem("clickmarket_auth");
@@ -257,7 +289,12 @@ export async function updateCommandeStatus(
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ statut }),
+      body: JSON.stringify({
+        statut,
+        raison: raison || undefined,
+        // Si on annule la commande, annuler aussi le paiement
+        ...(statut === "annulee" && { paiementStatut: "annule" }),
+      }),
     });
 
     if (!response.ok) {

@@ -54,26 +54,29 @@ export default function NotificationsPopover() {
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="bg-red-500 absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+            <Badge className="bg-destructive/90 text-destructive-foreground absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
               {unreadCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800" align="end">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+      <PopoverContent
+        className="w-80 p-0 bg-popover border border-border"
+        align="end"
+      >
+        <div className="flex items-center justify-between p-4 border-bottom-default">
           <h3 className="font-semibold text-sm">Notifications</h3>
           {unreadCount > 0 && (
             <Badge
               variant="secondary"
-              className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs"
+              className="bg-destructive/10 dark:bg-destructive/20 text-destructive text-xs"
             >
               {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""}
             </Badge>
           )}
         </div>
 
-        <ScrollArea className="h-[320px]">
+        <ScrollArea className="h-80">
           <div className="space-y-1 p-2">
             {notifications.map((notif) => {
               const Icon = notif.icon;
@@ -88,8 +91,8 @@ export default function NotificationsPopover() {
               return (
                 <div
                   key={notif.id}
-                  className={`flex gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer ${
-                    notif.unread ? "bg-gray-50 dark:bg-gray-900/50" : ""
+                  className={`flex gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer ${
+                    notif.unread ? "bg-muted/60" : ""
                   }`}
                 >
                   <div
@@ -105,7 +108,7 @@ export default function NotificationsPopover() {
                         {notif.title}
                       </p>
                       {notif.unread && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-1 flex-shrink-0" />
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-1 shrink-0" />
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2">
@@ -121,7 +124,7 @@ export default function NotificationsPopover() {
           </div>
         </ScrollArea>
 
-        <div className="border-t border-gray-200 dark:border-gray-800 p-2">
+        <div className="border-top-default p-2">
           <Link href="/notifications">
             <Button
               variant="ghost"

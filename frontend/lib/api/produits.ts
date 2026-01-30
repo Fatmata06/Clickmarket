@@ -48,6 +48,7 @@ export interface GetProduitsParams {
   inStock?: boolean;
   tags?: string[];
   sort?: "price-asc" | "price-desc" | "newest" | "popular" | "rating";
+  includeNonValides?: boolean;
 }
 
 export interface ProduitsResponse {
@@ -83,6 +84,7 @@ export interface UpdateProduitData {
   reviewsCount?: number;
   tags?: string[];
   images?: File[];
+  imagesToDelete?: string[];
 }
 
 // Récupérer tous les produits avec filtres
@@ -105,12 +107,20 @@ export async function getProduits(
     if (params?.tags)
       params.tags.forEach((tag) => queryParams.append("tags", tag));
     if (params?.sort) queryParams.append("sort", params.sort);
+    if (params?.includeNonValides)
+      queryParams.append("includeNonValides", "true");
+
+    const token = getAuthToken();
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
 
     const response = await fetch(`${API_URL}/produits?${queryParams}`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -130,11 +140,17 @@ export async function getProduits(
 // Récupérer un produit par ID
 export async function getProduitById(id: string): Promise<Produit> {
   try {
+    const token = getAuthToken();
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_URL}/produits/${id}`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -432,4 +448,3 @@ export async function refuserProduit(
     throw error;
   }
 }
-

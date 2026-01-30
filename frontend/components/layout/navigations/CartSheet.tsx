@@ -40,6 +40,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/cart-context";
+import { useAuth } from "@/context/auth-context";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -57,12 +58,13 @@ export default function CartSheet() {
     removeItem,
     clearCartItems,
   } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState<"livraison" | "retrait">(
-    "retrait",
+    "livraison",
   );
   const [zones, setZones] = useState<ZoneLivraison[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("");
@@ -166,16 +168,18 @@ export default function CartSheet() {
             <ShoppingCart className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent
-          side="right"
-          className="w-full sm:w-[400px] flex flex-col"
-        >
+        <SheetContent side="right" className="w-full sm:h-100 flex flex-col">
           <div className="flex items-center justify-center h-full">
             <LoadingSpinner />
           </div>
         </SheetContent>
       </Sheet>
     );
+  }
+
+  // Ne pas afficher le panier pour les admins et fournisseurs
+  if (user?.role === "admin" || user?.role === "fournisseur") {
+    return null;
   }
 
   return (
@@ -194,7 +198,7 @@ export default function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:w-[400px] flex flex-col">
+      <SheetContent side="right" className="w-full sm:h-100 flex flex-col">
         <SheetHeader>
           <SheetTitle>Panier ({itemCount} articles)</SheetTitle>
         </SheetHeader>
@@ -290,22 +294,18 @@ export default function CartSheet() {
             </div>
 
             <div className="space-y-2">
-              <SheetClose asChild>
-                <Button
-                  className="w-full text-white bg-green-600 hover:bg-green-700"
-                  asChild
-                >
-                  <Link href="/produits">
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Continuer les achats
-                  </Link>
-                </Button>
-              </SheetClose>
+              <Button
+                className="w-full text-white bg-green-600 hover:bg-green-700"
+                onClick={() => setShowCheckoutDialog(true)}
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Commander
+              </Button>
 
               <div className="flex gap-2">
                 <Button
                   variant="destructive"
-                  className="flex-1 bg-red-500 dark:bg-red-500 hover:bg-red-600 dark:hover:bg-red-700"
+                  className="flex-1 btn-destructive"
                   onClick={async () => {
                     await clearCartItems();
                   }}
@@ -314,13 +314,17 @@ export default function CartSheet() {
                   Vider le panier
                 </Button>
 
-                <Button
-                  className="flex-1 bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700"
-                  onClick={() => setShowCheckoutDialog(true)}
-                >
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Commander
-                </Button>
+                <SheetClose asChild>
+                  <Button
+                    className="flex-1 text-white bg-green-600 hover:bg-green-700"
+                    asChild
+                  >
+                    <Link href="/panier">
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Voir le panier
+                    </Link>
+                  </Button>
+                </SheetClose>
               </div>
             </div>
           </div>

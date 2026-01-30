@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import {
   ShoppingCart,
   Heart,
   Search,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import Breadcrumb from "@/components/breadcrumb";
 import { useProducts } from "@/hooks/useProducts";
@@ -23,6 +25,7 @@ import { useCart } from "@/context/cart-context";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function SearchPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -33,8 +36,25 @@ export default function SearchPage() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [hasSearched, setHasSearched] = useState(!!initialQuery);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const { addToCart } = useCart();
+
+  // Vérifier si l'utilisateur est admin
+  useEffect(() => {
+    const authData = localStorage.getItem("clickmarket_auth");
+    if (authData) {
+      try {
+        const { user } = JSON.parse(authData);
+        setIsAdmin(user?.role === "admin");
+      } catch (error) {
+        console.error(
+          "Erreur lors de la lecture des données utilisateur:",
+          error,
+        );
+      }
+    }
+  }, []);
 
   // Fetch products based on search query
   const { products, isLoading, error } = useProducts({
@@ -88,8 +108,8 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Search Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-800 dark:to-emerald-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-800 dark:to-emerald-800">
+        <div className="page-container">
           <Breadcrumb items={breadcrumbs} className="text-white/80 mb-6" />
           <h1 className="text-4xl font-bold text-white mb-4">Rechercher</h1>
 
@@ -109,7 +129,7 @@ export default function SearchPage() {
               </div>
               <Button
                 type="submit"
-                className="h-12 bg-white text-green-600 hover:bg-gray-100 font-semibold"
+                className="h-12 bg-card text-green-600 hover:bg-muted font-semibold"
               >
                 Rechercher
               </Button>
@@ -149,7 +169,7 @@ export default function SearchPage() {
                 showFilters ? "block" : "hidden lg:block"
               }`}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-6">
+              <div className="surface-card rounded-lg p-6 stack-6">
                 {/* Mobile Filters Header */}
                 <div className="flex items-center justify-between lg:hidden">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -253,7 +273,7 @@ export default function SearchPage() {
             {/* Products Grid */}
             <div className="lg:w-3/4">
               {/* Toolbar */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
+              <div className="surface-card rounded-lg p-4 mb-6">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Results Count */}
                   <div className="text-gray-600 dark:text-gray-400">
@@ -277,7 +297,7 @@ export default function SearchPage() {
                     </Button>
 
                     {/* View Toggle */}
-                    <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                    <div className="flex items-center border-default rounded-lg overflow-hidden">
                       <Button
                         variant={viewMode === "grid" ? "default" : "ghost"}
                         size="icon"
@@ -300,7 +320,7 @@ export default function SearchPage() {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2 input-surface rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       {sortOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -338,7 +358,7 @@ export default function SearchPage() {
                     return (
                       <div
                         key={product._id}
-                        className={`group relative bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden ${
+                        className={`group relative surface-card-hover rounded-lg overflow-hidden ${
                           viewMode === "list" ? "flex" : "block"
                         }`}
                       >
@@ -354,7 +374,7 @@ export default function SearchPage() {
                                 : "w-full aspect-square"
                             }`}
                           >
-                            <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
+                            <div className="relative w-full h-full bg-muted">
                               <Image
                                 src={imageUrl}
                                 alt={product.nomProduit}
@@ -373,7 +393,7 @@ export default function SearchPage() {
                               </Badge>
                             )}
                             {product.stock === 0 && (
-                              <Badge className="absolute top-2 left-2 bg-red-500 text-white">
+                              <Badge className="absolute top-2 left-2 bg-destructive/90 text-destructive-foreground">
                                 Épuisé
                               </Badge>
                             )}
@@ -442,7 +462,7 @@ export default function SearchPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+                            className="surface-glass"
                             onClick={(e) => {
                               e.preventDefault();
                             }}
@@ -452,23 +472,55 @@ export default function SearchPage() {
                         </div>
 
                         {/* Add to Cart Button - Outside Link */}
-                        <div
-                          className={`absolute bottom-2 right-2 z-10 ${viewMode === "list" ? "bottom-auto top-12 right-2" : ""}`}
-                        >
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="gap-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                            disabled={
-                              product.stock === 0 ||
-                              addingToCart === product._id
-                            }
-                            onClick={(e) => handleAddToCart(e, product._id)}
+                        {!isAdmin ? (
+                          <div
+                            className={`absolute bottom-2 right-2 z-10 ${viewMode === "list" ? "bottom-auto top-12 right-2" : ""}`}
                           >
-                            <ShoppingCart className="h-4 w-4" />
-                            {addingToCart === product._id ? "..." : "Ajouter"}
-                          </Button>
-                        </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="gap-1 surface-glass opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={
+                                product.stock === 0 ||
+                                addingToCart === product._id
+                              }
+                              onClick={(e) => handleAddToCart(e, product._id)}
+                            >
+                              <ShoppingCart className="h-4 w-4" />
+                              {addingToCart === product._id ? "..." : "Ajouter"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <div
+                            className={`absolute bottom-2 right-2 z-10 flex gap-1 ${viewMode === "list" ? "bottom-auto top-12 right-2" : ""}`}
+                          >
+                            <Button
+                              size="sm"
+                              className="gap-1 bg-blue-600/90 hover:bg-blue-700 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                router.push(
+                                  `/produits/modifier/${product._id}`,
+                                );
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                              Modifier
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="gap-1 bg-destructive/90 hover:bg-destructive backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     );
                   })

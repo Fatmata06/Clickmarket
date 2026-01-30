@@ -198,9 +198,9 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center bg-gradient-to-br from-amber-50 via-white to-slate-100 px-4 py-12 dark:from-slate-950 dark:via-slate-900 dark:to-amber-950">
+    <div className="flex min-h-[80vh] items-center justify-center bg-linear-to-br from-amber-50 via-white to-slate-100 px-4 py-12 dark:from-slate-950 dark:via-slate-900 dark:to-amber-950">
       <div className="grid w-full max-w-4xl grid-cols-1 overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-amber-200/40 backdrop-blur-lg dark:border-slate-800 dark:shadow-amber-900/30 lg:grid-cols-2">
-        <div className="relative hidden bg-gradient-to-br from-amber-600 via-amber-500 to-amber-700 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="relative hidden bg-linear-to-br from-amber-600 via-amber-500 to-amber-700 p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div className="absolute inset-0 opacity-10" aria-hidden>
             <div className="absolute -left-24 -top-16 h-64 w-64 rounded-full bg-white blur-3xl" />
             <div className="absolute bottom-10 right-0 h-40 w-40 rounded-full bg-amber-200 blur-3xl" />

@@ -77,7 +77,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-bottom-default bg-card/80 backdrop-blur-md">
         {/* Top Bar */}
         <div className="bg-green-600 dark:bg-green-800 text-white py-2 px-2 sm:px-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-sm">
@@ -93,7 +93,7 @@ export default function Header() {
             </div>
             <div className="hidden md:flex items-center gap-4">
               <span>Livraison gratuite à partir de 10 000 FCFA</span>
-              <Badge variant="secondary" className="bg-white/20 text-white">
+              <Badge variant="secondary" className="bg-card/20 text-white">
                 Nouveau
               </Badge>
             </div>
@@ -157,7 +157,7 @@ export default function Header() {
                         <Input
                           type="search"
                           placeholder="Rechercher des produits..."
-                          className="pl-10 bg-gray-100 dark:bg-gray-800 border-0 w-full"
+                          className="pl-10 bg-muted border-0 w-full"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           onKeyDown={(e) => {
@@ -208,7 +208,7 @@ export default function Header() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>
-                        <div className="flex flex-col hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-md">
+                        <div className="flex flex-col hover:bg-muted p-2 rounded-md">
                           <span className="font-semibold">
                             {user?.prenom} {user?.nom}
                           </span>

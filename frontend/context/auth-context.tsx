@@ -146,23 +146,29 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       persist(data.token, nextUser);
 
-      // Fusionner les paniers : panier invité + panier utilisateur
-      const sessionId = localStorage.getItem("cartSessionId");
-      if (sessionId) {
-        try {
-          await mergeCartAfterLogin(sessionId);
-          console.log("✅ Paniers fusionnés avec succès");
-        } catch (mergeError) {
-          console.error("❌ Erreur fusion paniers:", mergeError);
-          // Ne pas bloquer la connexion si la fusion échoue
+      // Si c'est un admin ou fournisseur, vider complètement le panier
+      if (nextUser.role === "admin" || nextUser.role === "fournisseur") {
+        localStorage.removeItem("cartSessionId");
+        window.dispatchEvent(new Event("admin-login-clear-cart"));
+      } else {
+        // Fusionner les paniers : panier invité + panier utilisateur
+        const sessionId = localStorage.getItem("cartSessionId");
+        if (sessionId) {
+          try {
+            await mergeCartAfterLogin(sessionId);
+            console.log("✅ Paniers fusionnés avec succès");
+          } catch (mergeError) {
+            console.error("❌ Erreur fusion paniers:", mergeError);
+            // Ne pas bloquer la connexion si la fusion échoue
+          }
         }
+
+        // Nettoyer le sessionId du panier invité après fusion
+        localStorage.removeItem("cartSessionId");
+
+        // Déclencher un événement pour recharger le panier fusionné
+        window.dispatchEvent(new Event("auth-changed"));
       }
-
-      // Nettoyer le sessionId du panier invité après fusion
-      localStorage.removeItem("cartSessionId");
-
-      // Déclencher un événement pour recharger le panier fusionné
-      window.dispatchEvent(new Event("auth-changed"));
 
       return nextUser;
     } catch (err) {

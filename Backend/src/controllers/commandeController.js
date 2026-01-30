@@ -190,7 +190,7 @@ exports.recupererCommande = async (req, res) => {
 
 exports.mettreAJourStatut = async (req, res) => {
   try {
-    const { statut } = req.body;
+    const { statut, paiementStatut, raison } = req.body;
     if (!STATUTS_AUTORISES.includes(statut)) {
       return res.status(400).json({ message: "Statut invalide" });
     }
@@ -200,7 +200,27 @@ exports.mettreAJourStatut = async (req, res) => {
       return res.status(404).json({ message: "Commande introuvable" });
     }
 
+    const ancienStatut = commande.statutCommande;
     commande.statutCommande = statut;
+
+    // Mettre à jour le statut de paiement si fourni
+    if (paiementStatut) {
+      commande.paiement = commande.paiement || {};
+      commande.paiement.statut = paiementStatut;
+    }
+
+    // Ajouter à l'historique avec le bon format
+    if (!commande.historique) {
+      commande.historique = [];
+    }
+    commande.historique.push({
+      champ: "statutCommande",
+      ancienneValeur: ancienStatut,
+      nouvelleValeur: statut,
+      modifiePar: req.user?.id,
+      raison: raison || undefined,
+    });
+
     await commande.save();
 
     res.json({ message: "Statut mis a jour", commande });

@@ -167,8 +167,7 @@ const dashboardConfigs = {
         icon: Package,
         color: "text-blue-600 dark:text-blue-400",
         bgColor: "bg-blue-50 dark:bg-blue-900/20",
-        cardColor:
-          "bg-gray-100 border border-gray-200 dark:bg-gray-900 dark:border-gray-700",
+        cardColor: "surface-muted",
       },
       {
         title: "Livrées",
@@ -183,7 +182,7 @@ const dashboardConfigs = {
         value: "8",
         icon: Heart,
         color: "text-red-600 dark:text-red-400",
-        bgColor: "bg-red-50 dark:bg-red-900/20",
+        bgColor: "bg-destructive/10 dark:bg-destructive/20",
         change: "Produits sauvegardés",
       },
       {
@@ -251,7 +250,7 @@ export default function UnifiedDashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-container-md">
       {/* En-tête */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{config.title}</h1>
@@ -298,7 +297,7 @@ export default function UnifiedDashboard() {
                 <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader>
                     <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+                      <div className="p-3 rounded-lg bg-muted">
                         <Icon className={`h-6 w-6 ${action.color}`} />
                       </div>
                       <div>

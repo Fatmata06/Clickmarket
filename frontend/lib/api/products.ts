@@ -8,6 +8,10 @@ export interface Product {
   description?: string;
   prix: number;
   stock: number;
+  uniteVente?: {
+    nom: "kg" | "litre" | "piece";
+    pas: number;
+  };
   categorie?: string;
   typeProduit?: "fruits" | "legumes" | string;
   image?: string;

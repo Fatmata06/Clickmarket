@@ -37,8 +37,16 @@ export default function FeaturedProducts() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner />
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center space-y-4">
+          <LoadingSpinner />
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Chargement des produits depuis le serveur...
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            Cela peut prendre quelques instants lors du premier chargement
+          </p>
+        </div>
       </div>
     );
   }
@@ -68,7 +76,7 @@ export default function FeaturedProducts() {
             transition={{ duration: 0.5, delay: index * 0.1 }}
             whileHover={{ y: -8 }}
           >
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl dark:shadow-gray-900/50 dark:hover:shadow-gray-900 transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
+            <Card className="overflow-hidden shadow-lg hover:shadow-xl dark:shadow-gray-900/50 dark:hover:shadow-gray-900 transition-all duration-300">
               <CardHeader className="p-0 relative overflow-hidden m-0">
                 <div className="relative h-48 w-full">
                   <Image
@@ -117,7 +125,7 @@ export default function FeaturedProducts() {
                 </Button>
                 <Link
                   href={`/produits/${product._id}`}
-                  className="h-full flex items-center justify-center px-3 rounded-md border border-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                  className="h-full flex items-center justify-center px-3 rounded-md border border-border text-foreground hover:bg-muted transition"
                 >
                   Voir
                 </Link>

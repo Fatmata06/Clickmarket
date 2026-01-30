@@ -71,10 +71,7 @@ export default function MobileMenu() {
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="p-0 flex flex-col"
-      >
+      <SheetContent side="right" className="p-0 flex flex-col">
         <SheetHeader className="px-6 py-4 border-b">
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
@@ -101,24 +98,29 @@ export default function MobileMenu() {
               Navigation
             </h3>
             {navigationToDisplay.map((item) => (
-                <SheetClose key={item.name} asChild>
-                  <Link href={item.href}>
-                    <Button
-                      variant="ghost"
-                      className={"cursor-pointer w-full hover:bg-green-600 hover:text-white dark:hover:bg-white dark:hover:bg-green-400 dark:hover:text-white justify-start text-sm" + (pathname === item.href ? " font-semibold text-green-600 dark:text-green-400 border-l-4 border-green-600 dark:border-green-400" : "")}
-                    >
-                      {item.name}
-                    </Button>
-                  </Link>
-                </SheetClose>
-              ))}
+              <SheetClose key={item.name} asChild>
+                <Link href={item.href}>
+                  <Button
+                    variant="ghost"
+                    className={
+                      "cursor-pointer w-full hover:bg-primary hover:text-primary-foreground justify-start text-sm" +
+                      (pathname === item.href
+                        ? " font-semibold text-primary border-l-4 border-primary"
+                        : "")
+                    }
+                  >
+                    {item.name}
+                  </Button>
+                </Link>
+              </SheetClose>
+            ))}
           </nav>
 
           {/* User Section */}
           {isAuthenticated ? (
             <>
               {/* User Info Card */}
-              <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="mb-6 p-4 bg-muted rounded-lg">
                 <p className="font-semibold text-sm">
                   {user?.prenom} {user?.nom}
                 </p>
@@ -162,7 +164,7 @@ export default function MobileMenu() {
                     >
                       <Bell className="h-4 w-4 mr-2" />
                       Notifications
-                      <Badge className="bg-red-500 ml-auto h-4 w-4 p-0 flex items-center justify-center text-xs">
+                      <Badge className="bg-destructive/90 text-destructive-foreground ml-auto h-4 w-4 p-0 flex items-center justify-center text-xs">
                         2
                       </Badge>
                     </Button>
@@ -184,7 +186,7 @@ export default function MobileMenu() {
               {/* Logout Button */}
               <Button
                 variant="ghost"
-                className="w-full justify-start text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
+                className="w-full justify-start text-sm text-destructive hover:bg-destructive/10"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -202,7 +204,7 @@ export default function MobileMenu() {
                   <Link href="/login" className="block">
                     <Button
                       variant="outline"
-                      className="cursor-pointer w-full justify-start text-sm font-semibold hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900"
+                      className="cursor-pointer w-full justify-start text-sm font-semibold hover:bg-muted hover:text-foreground"
                     >
                       <LogIn className="h-4 w-4 mr-2" />
                       Se connecter
@@ -213,7 +215,7 @@ export default function MobileMenu() {
                   <Link href="/register" className="block">
                     <Button
                       variant="outline"
-                      className="cursor-pointer w-full justify-start text-sm font-semibold hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900"
+                      className="cursor-pointer w-full justify-start text-sm font-semibold hover:bg-muted hover:text-foreground"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
                       S&apos;inscrire
@@ -225,7 +227,7 @@ export default function MobileMenu() {
           )}
 
           {/* Theme Preference */}
-          <div className="mt-6 pt-6 border-t">
+          <div className="mt-6 pt-6 border-top-default">
             <div className="flex items-center justify-between px-3">
               <span className="text-sm font-medium">Thème</span>
               <ModeToggle />

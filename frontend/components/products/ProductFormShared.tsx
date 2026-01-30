@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,12 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { createProduit, updateProduit, type Produit } from "@/lib/api/produits";
+import {
+  createProduit,
+  updateProduit,
+  deleteImageProduit,
+  type Produit,
+} from "@/lib/api/produits";
 import { ArrowLeft, Upload, X, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useImageUpload } from "@/lib/hooks/useImageUpload";
@@ -49,6 +54,8 @@ export function ProductFormShared({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [remainingImages, setRemainingImages] = useState(existingImages);
+  const [originalImages, setOriginalImages] = useState(existingImages);
+  const [removingImageId, setRemovingImageId] = useState<string | null>(null);
 
   const {
     imageFiles,
@@ -56,6 +63,11 @@ export function ProductFormShared({
     handleImageChange: handleNewImageChange,
     removeImage: removeNewImage,
   } = useImageUpload(5);
+
+  useEffect(() => {
+    setRemainingImages(existingImages);
+    setOriginalImages(existingImages);
+  }, [existingImages]);
 
   const [formData, setFormData] = useState<ProductFormData>({
     nomProduit: initialData?.nomProduit || "",
@@ -75,8 +87,35 @@ export function ProductFormShared({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const removeExistingImage = (index: number) => {
-    setRemainingImages((prev) => prev.filter((_, i) => i !== index));
+  const removeExistingImage = async (index: number) => {
+    const image = remainingImages[index];
+    if (!image) return;
+
+    if (!initialData?._id || !image._id) {
+      setRemainingImages((prev) => prev.filter((_, i) => i !== index));
+      toast.error("Impossible de supprimer cette image maintenant");
+      return;
+    }
+
+    try {
+      setRemovingImageId(image._id);
+      setRemainingImages((prev) => prev.filter((_, i) => i !== index));
+      await deleteImageProduit(initialData._id, image._id);
+      toast.success("Image supprimée avec succès");
+    } catch (error) {
+      setRemainingImages((prev) => {
+        const next = [...prev];
+        next.splice(index, 0, image);
+        return next;
+      });
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la suppression de l'image",
+      );
+    } finally {
+      setRemovingImageId(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,6 +144,20 @@ export function ProductFormShared({
         return;
       }
 
+      const imagesToDelete =
+        mode === "edit"
+          ? originalImages
+              .filter(
+                (img) =>
+                  !remainingImages.some(
+                    (remaining) =>
+                      remaining.publicId === img.publicId ||
+                      remaining._id === img._id,
+                  ),
+              )
+              .map((img) => img._id || img.publicId)
+          : [];
+
       const productData = {
         nomProduit: formData.nomProduit.trim(),
         typeProduit: formData.typeProduit,
@@ -120,10 +173,7 @@ export function ProductFormShared({
           .map((tag) => tag.trim())
           .filter((tag) => tag.length > 0),
         images: imageFiles,
-        imagesToKeep:
-          mode === "edit"
-            ? remainingImages.map((img) => img._id || img.publicId)
-            : undefined,
+        imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
       };
 
       if (mode === "create") {
@@ -312,7 +362,7 @@ export function ProductFormShared({
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   {remainingImages.map((image, index) => (
                     <div key={image.publicId} className="relative group">
-                      <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
+                      <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-border">
                         <Image
                           src={image.url}
                           alt={`Image ${index + 1}`}
@@ -326,7 +376,7 @@ export function ProductFormShared({
                         size="icon"
                         className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => removeExistingImage(index)}
-                        disabled={isLoading}
+                        disabled={isLoading || removingImageId === image._id}
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -347,7 +397,10 @@ export function ProductFormShared({
                   type="button"
                   variant="outline"
                   onClick={() => document.getElementById("images")?.click()}
-                  disabled={isLoading || previewImages.length >= 5}
+                  disabled={
+                    isLoading ||
+                    previewImages.length + remainingImages.length >= 5
+                  }
                 >
                   <Upload className="mr-2 h-4 w-4" />
                   Choisir des images
@@ -359,10 +412,13 @@ export function ProductFormShared({
                   multiple
                   onChange={handleNewImageChange}
                   className="hidden"
-                  disabled={isLoading}
+                  disabled={
+                    isLoading ||
+                    previewImages.length + remainingImages.length >= 5
+                  }
                 />
                 <span className="text-sm text-muted-foreground">
-                  {previewImages.length} / 5 images
+                  {previewImages.length + remainingImages.length} / 5 images
                 </span>
               </div>
 

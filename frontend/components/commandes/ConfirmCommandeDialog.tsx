@@ -94,7 +94,7 @@ export function ConfirmCommandeDialog({
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   {/* Image */}
-                  <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0">
                     {item.produit.images && item.produit.images[0] ? (
                       <Image
                         src={item.produit.images[0]?.url || "/placeholder.png"}

@@ -12,7 +12,7 @@ const {
   refuserProduit,
 } = require("../controllers/produitController");
 const { uploadProduit } = require("../config/multer");
-const { isRole, auth } = require("../middleware/auth");
+const { isRole, auth, optionalAuth } = require("../middleware/auth");
 
 /**
  * @swagger
@@ -223,7 +223,7 @@ router.post(
  *       500:
  *         description: Erreur serveur
  */
-router.get("/", getAllProduits);
+router.get("/", optionalAuth, getAllProduits);
 
 /**
  * @swagger
@@ -361,7 +361,7 @@ router.patch("/:id/refuser", auth, isRole(["admin"]), refuserProduit);
  *       500:
  *         description: Erreur serveur
  */
-router.get("/:id", getProduitById);
+router.get("/:id", optionalAuth, getProduitById);
 
 // Mettre à jour un produit
 /**

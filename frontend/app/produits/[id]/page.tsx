@@ -21,6 +21,7 @@ import {
   Edit,
   Trash2,
   AlertCircle,
+  Eye,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -36,9 +37,16 @@ import {
 import Breadcrumb from "@/components/breadcrumb";
 import { useProduct } from "@/hooks/useProduct";
 import { useCart } from "@/context/cart-context";
+import { useAuth } from "@/context/auth-context";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useProducts } from "@/hooks/useProducts";
 import { deleteProduit } from "@/lib/api/produits";
+import ProductNotFound from "@/components/products/ProductNotFound";
+import {
+  ajouterFavori,
+  retirerFavori,
+  verifierFavori,
+} from "@/lib/api/favoris";
 import { toast } from "sonner";
 
 export default function ProductDetailPage({
@@ -51,22 +59,53 @@ export default function ProductDetailPage({
   const { product, isLoading, error } = useProduct(resolvedParams.id);
   const { products: relatedProducts } = useProducts({ limit: 3 });
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+
+  console.log("ProductDetailPage - product:", product);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isFournisseur, setIsFournisseur] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Vérifier si l'utilisateur est admin ou fournisseur
+  const stockValue = product?.stock ?? 0;
+  const baseUnitLabel =
+    product?.uniteVente?.nom === "piece"
+      ? "pièce"
+      : product?.uniteVente?.nom || "unité";
+  const stockUnitLabel =
+    baseUnitLabel === "unité"
+      ? stockValue > 1
+        ? "unités"
+        : "unité"
+      : baseUnitLabel === "pièce"
+        ? stockValue > 1
+          ? "pièces"
+          : "pièce"
+        : baseUnitLabel;
+  const unitStep = product?.uniteVente?.pas ?? 1;
+
+  // Vérifier le rôle de l'utilisateur et son propriété
   useEffect(() => {
     const authData = localStorage.getItem("clickmarket_auth");
     if (authData) {
       try {
         const { user } = JSON.parse(authData);
-        setIsAdmin(user?.role === "admin" || user?.role === "fournisseur");
+        const isAdm = user?.role === "admin";
+        const isFourn = user?.role === "fournisseur";
+        setIsAdmin(isAdm);
+        setIsFournisseur(isFourn);
+
+        // Vérifier si l'utilisateur est propriétaire du produit
+        if (product && isFourn && product.fournisseur?._id === user?.id) {
+          setIsOwner(true);
+        }
       } catch (error) {
         console.error(
           "Erreur lors de la lecture des données utilisateur:",
@@ -74,7 +113,54 @@ export default function ProductDetailPage({
         );
       }
     }
-  }, []);
+  }, [product]);
+
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      if (!product || !isAuthenticated) {
+        setIsFavorite(false);
+        return;
+      }
+
+      try {
+        const isFav = await verifierFavori(product._id);
+        setIsFavorite(isFav);
+      } catch (error) {
+        console.error("Erreur lors de la vérification du favori:", error);
+      }
+    };
+
+    loadFavoriteStatus();
+  }, [product, isAuthenticated]);
+
+  const handleToggleFavorite = async () => {
+    if (!product) return;
+
+    if (!isAuthenticated) {
+      toast.error("Vous devez être connecté pour ajouter aux favoris");
+      return;
+    }
+
+    try {
+      setIsTogglingFavorite(true);
+      if (isFavorite) {
+        await retirerFavori(product._id);
+        setIsFavorite(false);
+        toast.success("Produit retiré des favoris");
+      } else {
+        await ajouterFavori(product._id);
+        setIsFavorite(true);
+        toast.success("Produit ajouté aux favoris");
+      }
+    } catch (error) {
+      console.error("Erreur lors du toggle favori:", error);
+      toast.error(
+        (error as Error).message || "Erreur lors de la mise à jour des favoris",
+      );
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -110,26 +196,25 @@ export default function ProductDetailPage({
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+        <div className="text-center space-y-4">
+          <LoadingSpinner />
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Chargement du produit...
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            Veuillez patienter pendant la connexion au serveur
+          </p>
+        </div>
       </div>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Produit non trouvé
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {error || "Ce produit n'existe pas ou a été supprimé"}
-          </p>
-          <Link href="/produits">
-            <Button>Retour aux produits</Button>
-          </Link>
-        </div>
-      </div>
+      <ProductNotFound
+        id={resolvedParams.id}
+        reason={error ? "not_found" : "not_found"}
+      />
     );
   }
 
@@ -160,20 +245,20 @@ export default function ProductDetailPage({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="bg-card border-bottom-default">
+        <div className="page-container-tight">
           <Breadcrumb items={breadcrumbs} />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container-md">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Images Gallery */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="h-82 xl:h-96 w-full relative aspect-square rounded-lg overflow-hidden bg-white dark:bg-gray-800 shadow-lg">
+            <div className="h-82 xl:h-96 w-full relative aspect-square rounded-lg overflow-hidden surface-card shadow-lg">
               <Image
                 src={getImageUrl(selectedImage)}
                 alt={product.nomProduit}
@@ -187,18 +272,19 @@ export default function ProductDetailPage({
                 </Badge>
               )}
               {product.stock === 0 && (
-                <Badge className="absolute top-4 left-4 bg-red-500 text-white">
+                <Badge className="absolute top-4 left-4 bg-destructive/90 text-destructive-foreground">
                   Rupture de stock
                 </Badge>
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-4 right-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
-                onClick={() => setIsFavorite(!isFavorite)}
+                className="absolute top-4 right-4 surface-glass"
+                onClick={handleToggleFavorite}
+                disabled={isTogglingFavorite}
               >
                 <Heart
-                  className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
+                  className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : "text-gray-500"}`}
                 />
               </Button>
             </div>
@@ -218,7 +304,7 @@ export default function ProductDetailPage({
                       }`}
                       onClick={() => setSelectedImage(index)}
                     >
-                      <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
+                      <div className="relative w-full h-full bg-muted">
                         <Image
                           src={imgUrl}
                           alt={`${product.nomProduit} vue ${index + 1}`}
@@ -236,29 +322,6 @@ export default function ProductDetailPage({
 
           {/* Product Info */}
           <div className="space-y-6">
-            {/* Actions Admin/Fournisseur */}
-            {isAdmin && (
-              <div className="flex gap-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() =>
-                    router.push(`/produits/modifier/${product._id}`)
-                  }
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Modifier le produit
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Supprimer
-                </Button>
-              </div>
-            )}
-
             {/* Brand & Category */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -344,7 +407,7 @@ export default function ProductDetailPage({
               <div className="flex items-center gap-3">
                 <div
                   className={`h-3 w-3 rounded-full ${
-                    product.stock > 0 ? "bg-green-500" : "bg-red-500"
+                    product.stock > 0 ? "bg-green-500" : "bg-destructive"
                   }`}
                 ></div>
                 <span className="text-gray-600 dark:text-gray-400">
@@ -362,14 +425,21 @@ export default function ProductDetailPage({
               {/* Quantity Selector */}
               <div className="flex items-center gap-4">
                 <span className="text-gray-700 dark:text-gray-300 font-medium">
-                  Quantité:
+                  Quantité ({baseUnitLabel}):
                 </span>
-                <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg">
+                <div className="flex items-center border-default rounded-lg">
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-10 w-10"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    onClick={() =>
+                      setQuantity(
+                        Math.max(
+                          unitStep,
+                          Number((quantity - unitStep).toFixed(3)),
+                        ),
+                      )
+                    }
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -377,16 +447,24 @@ export default function ProductDetailPage({
                     type="number"
                     value={quantity}
                     onChange={(e) =>
-                      setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                      setQuantity(
+                        Math.max(
+                          unitStep,
+                          parseFloat(e.target.value) || unitStep,
+                        ),
+                      )
                     }
                     className="w-16 text-center border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    min="1"
+                    min={unitStep}
+                    step={unitStep}
                   />
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-10 w-10"
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() =>
+                      setQuantity(Number((quantity + unitStep).toFixed(3)))
+                    }
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -394,33 +472,99 @@ export default function ProductDetailPage({
                 <span className="text-gray-600 dark:text-gray-400">
                   Stock disponible:{" "}
                   <span className="font-medium text-green-600">
-                    {product.stock} unité{product.stock > 1 ? "s" : ""}
+                    {stockValue} {stockUnitLabel}
                   </span>
                 </span>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  size="lg"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={handleAddToCart}
-                  disabled={addingToCart || product.stock === 0}
-                >
-                  <ShoppingCart className="h-5 w-5 mr-2" />
-                  {addingToCart ? "Ajout en cours..." : "Ajouter au panier"}
-                </Button>
-                <Button size="lg" variant="outline" className="flex-1">
-                  Acheter maintenant
-                </Button>
-                <Button variant="ghost" size="icon" className="h-12 w-12">
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
+              {isAdmin ? (
+                // Boutons pour admin
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    size="lg"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() =>
+                      router.push(`/produits/modifier/${product._id}`)
+                    }
+                  >
+                    <Edit className="h-5 w-5 mr-2" />
+                    Modifier le produit
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-5 w-5 mr-2" />
+                    Refuser/Supprimer
+                  </Button>
+                </div>
+              ) : isFournisseur && isOwner ? (
+                // Boutons pour fournisseur - son propre produit
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    size="lg"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() =>
+                      router.push(`/produits/modifier/${product._id}`)
+                    }
+                  >
+                    <Edit className="h-5 w-5 mr-2" />
+                    Modifier le produit
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-5 w-5 mr-2" />
+                    Supprimer le produit
+                  </Button>
+                </div>
+              ) : isFournisseur && !isOwner ? (
+                // Boutons pour fournisseur - produit d'un autre fournisseur
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="flex-1"
+                    disabled
+                  >
+                    <Eye className="h-5 w-5 mr-2" />
+                    Détails du produit
+                  </Button>
+                  <Button size="lg" variant="ghost" className="flex-1">
+                    <Share2 className="h-5 w-5 mr-2" />
+                    Partager
+                  </Button>
+                </div>
+              ) : (
+                // Boutons pour clients et fournisseurs (produits des autres)
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    size="lg"
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    onClick={handleAddToCart}
+                    disabled={addingToCart || product.stock === 0}
+                  >
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    {addingToCart ? "Ajout en cours..." : "Ajouter au panier"}
+                  </Button>
+                  <Button size="lg" variant="outline" className="flex-1">
+                    Acheter maintenant
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-12 w-12">
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Delivery & Guarantee */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-top-default">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
                   <Truck className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -465,7 +609,7 @@ export default function ProductDetailPage({
         </div>
 
         {/* Related Products */}
-        <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-16 pt-8 border-top-default">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Produits similaires
@@ -484,10 +628,10 @@ export default function ProductDetailPage({
               <Link
                 key={relatedProduct._id}
                 href={`/produits/${relatedProduct._id}`}
-                className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
+                className="group surface-card-hover rounded-lg overflow-hidden"
               >
                 <div className="relative aspect-square">
-                  <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
+                  <div className="relative w-full h-full bg-muted">
                     <Image
                       src={
                         relatedProduct.images && relatedProduct.images[0]
@@ -536,7 +680,7 @@ export default function ProductDetailPage({
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-500 hover:bg-red-600"
+              className="btn-destructive"
             >
               {isDeleting ? "Suppression..." : "Supprimer"}
             </AlertDialogAction>

@@ -43,7 +43,7 @@ export default function WhyChooseUs() {
             transition={{ duration: 0.5, delay: index * 0.1 }}
             whileHover={{ scale: 1.05 }}
           >
-            <Card className="border-0 shadow-lg hover:shadow-xl dark:shadow-gray-900/50 transition-all duration-300 h-full dark:bg-gray-800 dark:border-gray-700">
+            <Card className="shadow-lg hover:shadow-xl dark:shadow-gray-900/50 transition-all duration-300 h-full">
               <CardContent className="p-2 sm:p-6 text-center">
                 <div className="w-10 sm:w-16 h-10 sm:h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
                   {feature.icon}

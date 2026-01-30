@@ -47,7 +47,7 @@ export default function Testimonials() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
           >
-            <Card className="border-0 shadow-lg hover:shadow-xl dark:shadow-gray-900/50 transition-all duration-300 h-full dark:bg-gray-800 dark:border-gray-700">
+            <Card className="shadow-lg hover:shadow-xl dark:shadow-gray-900/50 transition-all duration-300 h-full">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (

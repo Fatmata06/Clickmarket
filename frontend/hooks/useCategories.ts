@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { getCategories } from "@/lib/api/products";
+import { getCategories } from "@/lib/api/produits";
 
 export function useCategories() {
-  const [categories, setCategories] = useState<string[]>(["fruits", "legumes"]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,15 +11,13 @@ export function useCategories() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await getCategories();
-        if (response.success && response.categories) {
-          setCategories(response.categories);
-        }
+        const data = await getCategories();
+        setCategories(data);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Erreur inconnue";
         setError(errorMessage);
-        // Keep default categories on error
+        console.error("Erreur lors du chargement des catégories:", err);
       } finally {
         setIsLoading(false);
       }

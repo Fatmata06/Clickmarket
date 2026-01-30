@@ -17,6 +17,7 @@ import {
 import Breadcrumb from "@/components/breadcrumb";
 import { useProducts } from "@/hooks/useProducts";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import NotFoundPage from "@/components/common/NotFoundPage";
 
 export default function CategoryPage({
   params,
@@ -93,29 +94,34 @@ export default function CategoryPage({
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+        <div className="text-center space-y-4">
+          <LoadingSpinner />
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Chargement de la catégorie...
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            Veuillez patienter pendant la connexion au serveur
+          </p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Erreur
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
-        </div>
-      </div>
+      <NotFoundPage
+        title="Catégorie non trouvée"
+        message={`La catégorie "${category.name}" n'existe pas ou n'est plus disponible.`}
+        icon="🏷️"
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Category Hero */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-800 dark:to-emerald-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-800 dark:to-emerald-800">
+        <div className="page-container">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="text-white lg:w-2/3">
               <Breadcrumb items={breadcrumbs} className="text-white/80" />
@@ -131,7 +137,7 @@ export default function CategoryPage({
               </div>
             </div>
             <div className="relative w-full lg:w-1/3 aspect-video lg:aspect-square rounded-lg overflow-hidden shadow-2xl">
-              <div className="relative w-full h-full bg-gray-100">
+              <div className="relative w-full h-full bg-muted">
                 <Image
                   src={category.image}
                   alt={category.name}
@@ -145,13 +151,13 @@ export default function CategoryPage({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container-md">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <div
             className={`lg:w-1/4 ${showFilters ? "block" : "hidden lg:block"}`}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-6">
+            <div className="surface-card rounded-lg p-6 stack-6">
               {/* Mobile Filters Header */}
               <div className="flex items-center justify-between lg:hidden">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -273,7 +279,7 @@ export default function CategoryPage({
           {/* Products Grid */}
           <div className="lg:w-3/4">
             {/* Toolbar */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
+            <div className="surface-card rounded-lg p-4 mb-6">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 {/* Results Count */}
                 <div className="text-gray-600 dark:text-gray-400">
@@ -296,7 +302,7 @@ export default function CategoryPage({
                   </Button>
 
                   {/* View Toggle */}
-                  <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                  <div className="flex items-center border-default rounded-lg overflow-hidden">
                     <Button
                       variant={viewMode === "grid" ? "default" : "ghost"}
                       size="icon"
@@ -319,7 +325,7 @@ export default function CategoryPage({
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="px-3 py-2 input-surface rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     {sortOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -357,7 +363,7 @@ export default function CategoryPage({
                     <Link
                       key={product._id}
                       href={`/produits/${product._id}`}
-                      className={`group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden ${
+                      className={`group surface-card-hover rounded-lg overflow-hidden ${
                         viewMode === "list" ? "flex" : "block"
                       }`}
                     >
@@ -369,7 +375,7 @@ export default function CategoryPage({
                             : "w-full aspect-square"
                         }`}
                       >
-                        <div className="relative w-full h-full bg-gray-100 dark:bg-gray-700">
+                        <div className="relative w-full h-full bg-muted">
                           <Image
                             src={imageUrl}
                             alt={product.nomProduit}
@@ -388,7 +394,7 @@ export default function CategoryPage({
                           </Badge>
                         )}
                         {product.stock === 0 && (
-                          <Badge className="absolute top-2 left-2 bg-red-500 text-white">
+                          <Badge className="absolute top-2 left-2 bg-destructive/90 text-destructive-foreground">
                             Épuisé
                           </Badge>
                         )}
@@ -400,7 +406,7 @@ export default function CategoryPage({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute bottom-2 right-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute bottom-2 right-2 surface-glass opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.preventDefault();
                             // Add to favorites

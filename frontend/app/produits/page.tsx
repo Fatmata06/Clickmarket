@@ -7,13 +7,26 @@ import ProductsGrid from "@/components/products/ProductGrid";
 import ProductsFilters from "@/components/products/ProductsFilters";
 import ProductsHeader from "@/components/products/ProducstHeader";
 import { Button } from "@/components/ui/button";
-import { Filter, Grid, Plus, Package } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Filter, Grid, List, Plus, Package } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useProducts } from "@/hooks/useProducts";
 
 export default function ProduitsPage() {
   const router = useRouter();
   const [sortBy, setSortBy] = useState("popular");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [priceRange, setPriceRange] = useState([0, 20000]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [rating, setRating] = useState<number | null>(null);
+  const [availability, setAvailability] = useState<string[]>([]);
 
   // Initialiser l'état fournisseur depuis localStorage
   const [isFournisseur] = useState(() => {
@@ -38,8 +51,8 @@ export default function ProduitsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-background dark:from-gray-900 dark:to-gray-950">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-linear-to-b from-primary/5 to-background dark:from-muted/40 dark:to-background">
+      <div className="page-container-md">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <ProductsHeader />
@@ -57,7 +70,7 @@ export default function ProduitsPage() {
               </Button>
               <Button
                 onClick={() => router.push("/fournisseur/produits/nouveau")}
-                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                className="btn-primary flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 Nouveau produit
@@ -67,64 +80,170 @@ export default function ProduitsPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 mt-8">
-          {/* Sidebar Filters */}
-          <aside className="lg:w-1/4">
+          {/* Sidebar Filters - Desktop */}
+          <aside className="hidden lg:block lg:w-1/4">
             <div className="sticky top-24">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  Filtres
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-green-600 dark:text-green-400 hover:underline cursor-pointer"
-                >
-                  Réinitialiser
-                </Button>
+              <div className="surface-card rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setFiltersOpen((prev) => !prev)}
+                    className="flex items-center gap-2 text-left"
+                  >
+                    <Filter className="h-5 w-5" />
+                    <h2 className="text-xl font-bold text-foreground">
+                      Filtres
+                    </h2>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary hover:underline cursor-pointer"
+                    onClick={() => {
+                      setPriceRange([0, 20000]);
+                      setSelectedCategories([]);
+                      setRating(null);
+                      setAvailability([]);
+                    }}
+                  >
+                    Réinitialiser
+                  </Button>
+                </div>
+                {filtersOpen && (
+                  <div className="border-top-default pt-4">
+                    <ProductsFilters
+                      priceRange={priceRange}
+                      onPriceRangeChange={setPriceRange}
+                      categories={selectedCategories}
+                      onCategoriesChange={setSelectedCategories}
+                      rating={rating}
+                      onRatingChange={setRating}
+                      availability={availability}
+                      onAvailabilityChange={setAvailability}
+                    />
+                  </div>
+                )}
+                {!filtersOpen && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() => setFiltersOpen(true)}
+                  >
+                    Afficher les filtres
+                  </Button>
+                )}
               </div>
-              <ProductsFilters />
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="lg:w-3/4">
+          <main className="flex-1 lg:w-3/4">
             {/* View Controls */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {total || 0}
-                </span>{" "}
-                produits trouvés
-              </div>
+            <div className="surface-card rounded-lg p-4 mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">
+                    {total || 0}
+                  </span>{" "}
+                  produits trouvés
+                </div>
 
-              <div className="flex items-center gap-4">
-                <Tabs defaultValue="grid" className="w-auto">
-                  <TabsList>
-                    <TabsTrigger value="grid">
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Bouton Filtres Mobile */}
+                  <Sheet open={showFilters} onOpenChange={setShowFilters}>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="lg:hidden flex items-center gap-2"
+                      >
+                        <Filter className="h-4 w-4" />
+                        Filtres
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-80 overflow-y-auto">
+                      <SheetHeader>
+                        <SheetTitle className="flex items-center gap-2">
+                          <Filter className="h-5 w-5" />
+                          Filtres
+                        </SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-6">
+                        <ProductsFilters
+                          priceRange={priceRange}
+                          onPriceRangeChange={setPriceRange}
+                          categories={selectedCategories}
+                          onCategoriesChange={setSelectedCategories}
+                          rating={rating}
+                          onRatingChange={setRating}
+                          availability={availability}
+                          onAvailabilityChange={setAvailability}
+                        />
+                      </div>
+                      <div className="mt-6">
+                        <Button
+                          onClick={() => setShowFilters(false)}
+                          className="w-full btn-primary"
+                        >
+                          Appliquer les filtres
+                        </Button>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+
+                  {/* Mode d'affichage */}
+                  <div className="flex items-center border-default rounded-lg overflow-hidden">
+                    <Button
+                      variant={viewMode === "grid" ? "default" : "ghost"}
+                      size="icon"
+                      className={`h-9 w-9 rounded-none ${
+                        viewMode === "grid"
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                          : ""
+                      }`}
+                      onClick={() => setViewMode("grid")}
+                    >
                       <Grid className="h-4 w-4" />
-                    </TabsTrigger>
-                    {/* <TabsTrigger value="list">
+                    </Button>
+                    <Button
+                      variant={viewMode === "list" ? "default" : "ghost"}
+                      size="icon"
+                      className={`h-9 w-9 rounded-none ${
+                        viewMode === "list"
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                          : ""
+                      }`}
+                      onClick={() => setViewMode("list")}
+                    >
                       <List className="h-4 w-4" />
-                    </TabsTrigger> */}
-                  </TabsList>
-                </Tabs>
+                    </Button>
+                  </div>
 
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-gray-100 dark:bg-gray-800 p-2 text-sm border-0 focus:ring-0 text-gray-700 dark:text-gray-300"
-                >
-                  <option value="popular">Les plus populaires</option>
-                  <option value="price-asc">Prix croissant</option>
-                  <option value="price-desc">Prix décroissant</option>
-                  <option value="newest">Nouveautés</option>
-                </select>
+                  {/* Tri */}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-2 input-surface rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  >
+                    <option value="popular">Les plus populaires</option>
+                    <option value="price-asc">Prix croissant</option>
+                    <option value="price-desc">Prix décroissant</option>
+                    <option value="newest">Nouveautés</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Products Grid */}
-            <ProductsGrid />
+            {/* Products Grid/List */}
+            <ProductsGrid
+              viewMode={viewMode}
+              filters={{
+                priceRange,
+                categories: selectedCategories,
+                rating,
+                availability,
+              }}
+            />
 
             {/* Pagination */}
             <div className="mt-12 flex items-center justify-center gap-2">
@@ -135,17 +254,14 @@ export default function ProduitsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                  className="bg-primary/10 text-primary hover:bg-primary/15"
                 >
                   1
                 </Button>
                 <Button variant="ghost" size="sm">
                   2
                 </Button>
-                {/* <Button variant="ghost" size="sm">
-                  3
-                </Button> */}
-                <span className="px-2 text-gray-500">...</span>
+                <span className="px-2 text-muted-foreground">...</span>
                 <Button variant="ghost" size="sm">
                   10
                 </Button>

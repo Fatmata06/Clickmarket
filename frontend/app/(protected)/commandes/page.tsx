@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
@@ -43,7 +44,6 @@ import {
   List,
   Calendar,
   MapPin,
-  Ban,
   X,
 } from "lucide-react";
 import {
@@ -53,6 +53,7 @@ import {
   updateCommandeStatus,
   cancelCommande,
 } from "@/lib/api/commandes";
+import { formatFCFA } from "@/lib/utils";
 import { toast } from "sonner";
 
 type Order = {
@@ -80,6 +81,14 @@ export default function OrdersPage() {
   const [userRole, setUserRole] = useState<string>("");
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [cancelReason, setCancelReason] = useState<string>("");
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [statusChangeDialogOpen, setStatusChangeDialogOpen] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    orderId: string;
+    newStatus: string;
+    orderNumber: string;
+  } | null>(null);
 
   useEffect(() => {
     // Vérifier le rôle de l'utilisateur
@@ -120,19 +129,33 @@ export default function OrdersPage() {
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    // Trouver la commande pour obtenir le numéro
+    const order = orders.find((o) => o.id === orderId);
+    const orderNumber = order?.orderNumber || orderId.slice(-8).toUpperCase();
+
+    // Ouvrir le dialogue de confirmation
+    setPendingStatusChange({ orderId, newStatus, orderNumber });
+    setStatusChangeDialogOpen(true);
+  };
+
+  const confirmStatusChange = async () => {
+    if (!pendingStatusChange) return;
+
     try {
       // Convertir les tirets en underscores pour l'API
-      const statusForApi = newStatus.replace(/-/g, "_") as
+      const statusForApi = pendingStatusChange.newStatus.replace(/-/g, "_") as
         | "en_attente"
         | "confirmee"
         | "en_preparation"
-        | "en_livraison"
+        | "expediee"
         | "livree"
         | "annulee";
 
-      await updateCommandeStatus(orderId, statusForApi);
+      await updateCommandeStatus(pendingStatusChange.orderId, statusForApi);
       toast.success("Statut de la commande mis à jour");
       await loadCommandes();
+      setStatusChangeDialogOpen(false);
+      setPendingStatusChange(null);
     } catch (error) {
       console.error("Erreur lors de la mise à jour du statut:", error);
       toast.error("Erreur lors de la mise à jour du statut");
@@ -143,14 +166,18 @@ export default function OrdersPage() {
     if (!selectedOrderId) return;
 
     try {
-      await cancelCommande(selectedOrderId);
+      setIsCanceling(true);
+      await cancelCommande(selectedOrderId, cancelReason);
       toast.success("Commande annulée avec succès");
       setCancelDialogOpen(false);
       setSelectedOrderId("");
+      setCancelReason("");
       await loadCommandes();
     } catch (error) {
       console.error("Erreur lors de l'annulation:", error);
       toast.error("Erreur lors de l'annulation de la commande");
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -161,7 +188,7 @@ export default function OrdersPage() {
 
   // Convertir les commandes Commande en Order pour les filtres
   const orders: Order[] = commandes.map((cmd) => {
-    const statut = cmd.statutCommande || cmd.statut || "en_attente";
+    const statut = cmd.statutCommande || "en_attente";
     const statusWithDashes = statut.replace(/_/g, "-");
 
     return {
@@ -178,8 +205,8 @@ export default function OrdersPage() {
         ? new Date(cmd.dateLivraison)
         : new Date(),
       itemsCount: cmd.articles.length,
-      deliveryMethod: cmd.methodeLivraison,
-      paymentStatus: cmd.statutPaiement as Order["paymentStatus"],
+      deliveryMethod: cmd.aLivrer ? "livraison" : "retrait",
+      paymentStatus: cmd.paiement.statut as Order["paymentStatus"],
     };
   });
 
@@ -218,14 +245,13 @@ export default function OrdersPage() {
       annulee: {
         label: "Annulée",
         color:
-          "text-red-700 bg-red-100 border-red-300 dark:text-red-400 dark:bg-red-950 dark:border-red-800",
+          "text-destructive bg-destructive/10 border-destructive/30 dark:bg-destructive/20",
       },
     };
 
     const statusConfig = config[status] || {
       label: status,
-      color:
-        "text-gray-700 bg-gray-100 border-gray-300 dark:text-gray-400 dark:bg-gray-950 dark:border-gray-800",
+      color: "text-foreground bg-muted border-border",
     };
 
     return <Badge className={statusConfig.color}>{statusConfig.label}</Badge>;
@@ -256,7 +282,7 @@ export default function OrdersPage() {
       echoue: {
         label: "Échoué",
         color:
-          "text-red-700 bg-red-100 border-red-300 dark:text-red-400 dark:bg-red-950 dark:border-red-800",
+          "text-destructive bg-destructive/10 border-destructive/30 dark:bg-destructive/20",
       },
       rembourse: {
         label: "Remboursée",
@@ -265,15 +291,13 @@ export default function OrdersPage() {
       },
       annule: {
         label: "Annulée",
-        color:
-          "text-gray-700 bg-gray-100 border-gray-300 dark:text-gray-400 dark:bg-gray-950 dark:border-gray-800",
+        color: "text-foreground bg-muted border-border",
       },
     };
 
     const paymentConfig = config[status] || {
       label: status || "Inconnu",
-      color:
-        "text-gray-700 bg-gray-100 border-gray-300 dark:text-gray-400 dark:bg-gray-950 dark:border-gray-800",
+      color: "text-foreground bg-muted border-border",
     };
 
     return (
@@ -311,7 +335,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="page-container-tight stack-6">
       {/* En-tête */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
@@ -534,6 +558,26 @@ export default function OrdersPage() {
                           </span>
                         </div>
                       </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">
+                          Statut de paiement
+                        </span>
+                        {getPaymentBadge(order.paymentStatus)}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">
+                          Total
+                        </div>
+                        <div className="text-lg font-bold text-green-600">
+                          {formatFCFA(order.totalAmount)}
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/commandes/${order.id}`}>Détails</Link>
+                      </Button>
                     </div>
 
                     {/* Actions Admin/Fournisseur */}
@@ -562,14 +606,12 @@ export default function OrdersPage() {
                               <SelectItem value="en-preparation">
                                 En préparation
                               </SelectItem>
-                              <SelectItem value="en-livraison">
-                                En livraison
-                              </SelectItem>
+                              <SelectItem value="expediee">Expédiée</SelectItem>
                               <SelectItem value="livree">Livrée</SelectItem>
                               <SelectItem value="annulee">Annulée</SelectItem>
                             </SelectContent>
                           </Select>
-                          <div className="flex gap-2">
+                          {/* <div className="flex gap-2">
                             <Button
                               variant="destructive"
                               size="sm"
@@ -596,29 +638,14 @@ export default function OrdersPage() {
                               }
                             >
                               <Ban className="h-3 w-3 mr-1" />
-                              Refuser
+                              Annuler
                             </Button>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-border">
-                      <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground">
-                          Total
-                        </div>
-                        <div className="text-lg font-bold text-green-600">
-                          {order.totalAmount.toFixed(2)} €
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/commandes/${order.id}`}>Détails</Link>
-                      </Button>
-                    </div>
-                    <div className="pt-2">
-                      {getPaymentBadge(order.paymentStatus)}
-                    </div>
+                    <div className="pt-2"></div>
                   </CardContent>
                 </Card>
               ))}
@@ -686,7 +713,7 @@ export default function OrdersPage() {
                         {getPaymentBadge(order.paymentStatus)}
                       </td>
                       <td className="py-4 px-4 font-semibold text-green-600">
-                        {order.totalAmount.toFixed(2)} €
+                        {formatFCFA(order.totalAmount)}
                       </td>
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -712,8 +739,8 @@ export default function OrdersPage() {
                                   <SelectItem value="en-preparation">
                                     En préparation
                                   </SelectItem>
-                                  <SelectItem value="en-livraison">
-                                    En livraison
+                                  <SelectItem value="expediee">
+                                    Expédiée
                                   </SelectItem>
                                   <SelectItem value="livree">Livrée</SelectItem>
                                   <SelectItem value="annulee">
@@ -772,7 +799,7 @@ export default function OrdersPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-lg bg-white/80 p-4 dark:bg-green-900/30 border border-green-200/50 dark:border-green-800/50">
+            <div className="rounded-lg p-4 bg-green-50/50 dark:bg-green-900/30 border border-border">
               <h4 className="font-semibold text-green-700 dark:text-green-400">
                 🕒 Commandes urgentes
               </h4>
@@ -781,7 +808,7 @@ export default function OrdersPage() {
                 lendemain
               </p>
             </div>
-            <div className="rounded-lg bg-white/80 p-4 dark:bg-green-900/30 border border-green-200/50 dark:border-green-800/50">
+            <div className="rounded-lg p-4 bg-green-50/50 dark:bg-green-900/30 border border-border">
               <h4 className="font-semibold text-green-700 dark:text-green-400">
                 📦 Préparation
               </h4>
@@ -789,7 +816,7 @@ export default function OrdersPage() {
                 Vérifiez la disponibilité des produits frais avant de confirmer
               </p>
             </div>
-            <div className="rounded-lg bg-white/80 p-4 dark:bg-green-900/30 border border-green-200/50 dark:border-green-800/50">
+            <div className="rounded-lg p-4 bg-green-50/50 dark:bg-green-900/30 border border-border">
               <h4 className="font-semibold text-green-700 dark:text-green-400">
                 🚚 Livraison
               </h4>
@@ -811,22 +838,104 @@ export default function OrdersPage() {
               irréversible.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="cancel-reason">
+                Raison de l&apos;annulation (optionnel)
+              </Label>
+              <Textarea
+                id="cancel-reason"
+                placeholder="Indiquez la raison de l'annulation..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="mt-2 min-h-25"
+              />
+            </div>
+          </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => {
                 setCancelDialogOpen(false);
                 setSelectedOrderId("");
+                setCancelReason("");
               }}
+              disabled={isCanceling}
             >
               Annuler
             </Button>
             <Button
               variant="destructive"
               onClick={handleCancelOrder}
-              className="bg-red-600 hover:bg-red-700"
+              disabled={isCanceling}
+              className="btn-destructive"
             >
-              Confirmer l&apos;annulation
+              {isCanceling ? "Annulation..." : "Confirmer l'annulation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialogue de confirmation de changement de statut */}
+      <Dialog
+        open={statusChangeDialogOpen}
+        onOpenChange={setStatusChangeDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer le changement de statut</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir modifier le statut de cette commande ?
+            </DialogDescription>
+          </DialogHeader>
+          {pendingStatusChange && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-muted">
+                <div className="text-sm space-y-2">
+                  <div>
+                    <span className="font-semibold">Commande :</span>{" "}
+                    {pendingStatusChange.orderNumber}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Nouveau statut :</span>{" "}
+                    <span className="capitalize">
+                      {pendingStatusChange.newStatus === "en-attente" &&
+                        "En attente"}
+                      {pendingStatusChange.newStatus === "confirmee" &&
+                        "Confirmée"}
+                      {pendingStatusChange.newStatus === "en-preparation" &&
+                        "En préparation"}
+                      {pendingStatusChange.newStatus === "expediee" &&
+                        "Expédiée"}
+                      {pendingStatusChange.newStatus === "livree" && "Livrée"}
+                      {pendingStatusChange.newStatus === "annulee" && "Annulée"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {pendingStatusChange.newStatus === "annulee" && (
+                <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                  ⚠️ L&apos;annulation d&apos;une commande est une action
+                  importante qui peut affecter le client.
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStatusChangeDialogOpen(false);
+                setPendingStatusChange(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={confirmStatusChange}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Confirmer le changement
             </Button>
           </DialogFooter>
         </DialogContent>

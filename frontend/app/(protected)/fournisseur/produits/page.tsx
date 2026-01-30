@@ -68,6 +68,7 @@ export default function FournisseurProduitsPage() {
     search: "",
     category: "",
     sort: "newest",
+    includeNonValides: true,
   });
 
   const [pagination, setPagination] = useState({
@@ -173,8 +174,8 @@ export default function FournisseurProduitsPage() {
 
   if (isLoading && produits.length === 0) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-center min-h-[400px]">
+      <div className="page-container-md">
+        <div className="flex items-center justify-center min-h-100">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </div>
@@ -182,7 +183,7 @@ export default function FournisseurProduitsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="page-container-md">
       {/* Header */}
       <div className="mb-6">
         <Button
@@ -443,7 +444,7 @@ export default function FournisseurProduitsPage() {
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-500 hover:bg-red-600"
+              className="btn-destructive"
             >
               {isDeleting ? (
                 <>

@@ -4,14 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import {
-  ShoppingBag,
-  Package,
-  Heart,
-  MapPin,
-  User,
-  Bell,
-} from "lucide-react";
+import { ShoppingBag, Package, Heart, MapPin, User, Bell } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -39,7 +32,7 @@ export default function DashboardClient() {
       icon: Package,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-900/20",
-      cardColor: "bg-gray-100 border border-gray-200 dark:bg-gray-900 dark:border-gray-700",
+      cardColor: "surface-muted",
     },
     {
       title: "Livrées",
@@ -47,15 +40,15 @@ export default function DashboardClient() {
       icon: ShoppingBag,
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
-      cardColor: "bg-gray-100 border border-gray-200 dark:bg-gray-900 dark:border-gray-700",
+      cardColor: "surface-muted",
     },
     {
       title: "Favoris",
       value: "8",
       icon: Heart,
       color: "text-red-600 dark:text-red-400",
-      bgColor: "bg-red-50 dark:bg-red-900/20",
-      cardColor: "bg-gray-100 border border-gray-200 dark:bg-gray-900 dark:border-gray-700",
+      bgColor: "bg-destructive/10 dark:bg-destructive/20",
+      cardColor: "surface-muted",
     },
     {
       title: "Adresses",
@@ -63,7 +56,7 @@ export default function DashboardClient() {
       icon: MapPin,
       color: "text-amber-600 dark:text-amber-400",
       bgColor: "bg-amber-50 dark:bg-amber-900/20",
-      cardColor: "bg-gray-100 border border-gray-200 dark:bg-gray-900 dark:border-gray-700",
+      cardColor: "surface-muted",
     },
   ];
 
@@ -73,34 +66,34 @@ export default function DashboardClient() {
       description: "Suivre mes commandes",
       href: "/client/commandes",
       icon: Package,
-      cardColor: "p-2 rounded cursor-pointer bg-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800",
+      cardColor: "p-2 rounded cursor-pointer surface-muted hover:bg-muted/80",
     },
     {
       title: "Mes favoris",
       description: "Produits sauvegardés",
       href: "/client/favoris",
       icon: Heart,
-      cardColor: "p-2 rounded cursor-pointer bg-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800",
+      cardColor: "p-2 rounded cursor-pointer surface-muted hover:bg-muted/80",
     },
     {
       title: "Mon profil",
       description: "Modifier mes informations",
       href: "/client/profil",
       icon: User,
-      cardColor: "p-2 rounded cursor-pointer bg-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800",
+      cardColor: "p-2 rounded cursor-pointer surface-muted hover:bg-muted/80",
     },
     {
       title: "Notifications",
       description: "Voir mes notifications",
       href: "/client/notifications",
       icon: Bell,
-      cardColor: "p-2 rounded cursor-pointer bg-gray-100 dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800",
+      cardColor: "p-2 rounded cursor-pointer surface-muted hover:bg-muted/80",
     },
   ];
 
   return (
     <div className="min-h-screen ">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="page-container-md">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
@@ -134,14 +127,18 @@ export default function DashboardClient() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-8">
-          <Card className="p-2 py-4 sm:p-4 border border-gray-200 dark:border-gray-700">
+          <Card className="p-2 py-4 sm:p-4 border-default">
             <CardHeader>
               <CardTitle>Actions rapides</CardTitle>
             </CardHeader>
             <CardContent className="p-2 sm:p-4">
               <div className="grid grid-cols-2 sm:gap-4 gap-2">
                 {quickActions.map((action) => (
-                  <Link key={action.title} href={action.href} className={action.cardColor}>
+                  <Link
+                    key={action.title}
+                    href={action.href}
+                    className={action.cardColor}
+                  >
                     <Button
                       // variant="outline"
                       className="cursor-pointer w-full h-auto flex flex-col items-start p-4 hover:bg-accent"
@@ -159,7 +156,7 @@ export default function DashboardClient() {
           </Card>
 
           {/* Recent Orders */}
-          <Card className="p-2 py-4 sm:p-4 border border-gray-200 dark:border-gray-700">
+          <Card className="p-2 py-4 sm:p-4 border-default">
             <CardHeader>
               <CardTitle>Commandes récentes</CardTitle>
             </CardHeader>
@@ -168,7 +165,7 @@ export default function DashboardClient() {
                 {[1, 2, 3].map((order) => (
                   <div
                     key={order}
-                    className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 flex items-center justify-between p-3 rounded-lg"
+                    className="surface-muted hover:bg-muted/80 flex items-center justify-between p-3 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/20">

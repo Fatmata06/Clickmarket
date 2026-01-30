@@ -72,6 +72,19 @@ exports.creerProduit = async (req, res) => {
       });
     }
 
+    const trustedEmails = (process.env.TRUSTED_FOURNISSEUR_EMAILS || "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+    const trustedIds = (process.env.TRUSTED_FOURNISSEUR_IDS || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    const isTrustedFournisseur =
+      trustedIds.includes(fournisseurExiste._id.toString()) ||
+      trustedEmails.includes((req.user.email || "").toLowerCase());
+
     const imagesToUpload = [];
     const files = Array.isArray(req.files) ? req.files : [];
     for (const file of files) {
@@ -94,6 +107,8 @@ exports.creerProduit = async (req, res) => {
       rating: rating || 4.5,
       reviewsCount: reviewsCount || 0,
       tags: tags ? (Array.isArray(tags) ? tags : JSON.parse(tags)) : [],
+      statutValidation: isTrustedFournisseur ? "accepte" : "en_attente",
+      dateValidation: isTrustedFournisseur ? new Date() : null,
     });
 
     const produitEnregistre = await nouveauProduit.save();
@@ -124,6 +139,8 @@ exports.getAllProduits = async (req, res) => {
       page = 1,
       limit = 12,
       search,
+      fournisseur,
+      includeNonValides,
     } = req.query;
 
     // Construire les filtres
@@ -134,6 +151,21 @@ exports.getAllProduits = async (req, res) => {
     }
     if (typeProduit) {
       filters.typeProduit = typeProduit;
+    }
+    if (fournisseur) {
+      filters.fournisseur = fournisseur;
+    }
+
+    // Filtre de validation (par défaut: seulement les produits acceptés)
+    const wantsNonValides = includeNonValides === "true";
+    const userRole = req.user?.role;
+    const isAdmin = userRole === "admin";
+    const isFournisseur = userRole === "fournisseur";
+
+    if (!wantsNonValides || (!isAdmin && !isFournisseur)) {
+      filters.statutValidation = "accepte";
+    } else if (isFournisseur) {
+      filters.fournisseur = req.user.id;
     }
 
     // Filtre de recherche par nom
@@ -232,6 +264,20 @@ exports.getProduitById = async (req, res) => {
         message: "Produit non trouvé",
       });
     }
+
+    if (produit.statutValidation !== "accepte") {
+      const isAdmin = req.user?.role === "admin";
+      const isOwner =
+        req.user?.role === "fournisseur" &&
+        produit.fournisseur?.toString() === req.user.id;
+
+      if (!isAdmin && !isOwner) {
+        return res.status(404).json({
+          success: false,
+          message: "Produit non trouvé",
+        });
+      }
+    }
     res.status(200).json({
       success: true,
       product: produit,
@@ -294,11 +340,25 @@ exports.updateProduit = async (req, res) => {
     }
 
     if (toDelete.length > 0) {
-      for (const publicId of toDelete) {
-        await deleteFromCloudinary(publicId);
-        produit.images = produit.images.filter(
-          (img) => img.publicId !== publicId,
+      for (const identifier of toDelete) {
+        const imageById = produit.images.id(identifier);
+        const imageByPublicId = produit.images.find(
+          (img) => img.publicId === identifier,
         );
+        const image = imageById || imageByPublicId;
+        const publicId = image?.publicId || identifier;
+
+        if (publicId) {
+          await deleteFromCloudinary(publicId);
+        }
+
+        if (imageById) {
+          produit.images.pull(imageById._id);
+        } else if (imageByPublicId) {
+          produit.images = produit.images.filter(
+            (img) => img.publicId !== identifier,
+          );
+        }
       }
     }
 
@@ -384,6 +444,7 @@ exports.getCategories = async (req, res) => {
   try {
     const categories = await Produit.distinct("typeProduit", {
       estActif: true,
+      statutValidation: "accepte",
     });
 
     if (!categories || categories.length === 0) {
@@ -412,7 +473,7 @@ exports.getCategories = async (req, res) => {
 exports.accepterProduit = async (req, res) => {
   try {
     const produit = await Produit.findById(req.params.id);
-    
+
     if (!produit) {
       return res.status(404).json({ message: "Produit non trouvé" });
     }
@@ -422,9 +483,9 @@ exports.accepterProduit = async (req, res) => {
     produit.dateValidation = new Date();
     await produit.save();
 
-    res.json({ 
-      message: "Produit accepté avec succès", 
-      produit 
+    res.json({
+      message: "Produit accepté avec succès",
+      produit,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -435,15 +496,15 @@ exports.accepterProduit = async (req, res) => {
 exports.refuserProduit = async (req, res) => {
   try {
     const { raisonRefus } = req.body;
-    
+
     if (!raisonRefus || raisonRefus.trim() === "") {
-      return res.status(400).json({ 
-        message: "Veuillez fournir une raison de refus" 
+      return res.status(400).json({
+        message: "Veuillez fournir une raison de refus",
       });
     }
 
     const produit = await Produit.findById(req.params.id);
-    
+
     if (!produit) {
       return res.status(404).json({ message: "Produit non trouvé" });
     }
@@ -453,9 +514,9 @@ exports.refuserProduit = async (req, res) => {
     produit.dateValidation = new Date();
     await produit.save();
 
-    res.json({ 
-      message: "Produit refusé avec succès", 
-      produit 
+    res.json({
+      message: "Produit refusé avec succès",
+      produit,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

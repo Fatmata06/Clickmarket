@@ -43,8 +43,8 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">{children}</div>
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+      <div className="page-container-md">{children}</div>
     </div>
   );
 }
