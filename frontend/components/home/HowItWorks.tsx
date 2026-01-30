@@ -1,39 +1,41 @@
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
-import { Search, ShoppingCart, Truck, CreditCard } from 'lucide-react'
+import { motion } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, ShoppingCart, Truck, CreditCard } from "lucide-react";
 
 const steps = [
   {
     icon: <Search className="h-8 w-8" />,
     title: "Parcourir",
-    description: "Explorez notre large sélection de fruits et légumes frais"
+    description: "Explorez notre large sélection de fruits et légumes frais",
   },
   {
     icon: <ShoppingCart className="h-8 w-8" />,
     title: "Ajouter au panier",
-    description: "Sélectionnez vos produits préférés et ajoutez-les au panier"
+    description: "Sélectionnez vos produits préférés et ajoutez-les au panier",
   },
   {
     icon: <CreditCard className="h-8 w-8" />,
     title: "Payer",
-    description: "Choisissez votre mode de paiement (Wave, Orange Money, Espèces)"
+    description:
+      "Choisissez votre mode de paiement (Wave, Orange Money, Espèces)",
   },
   {
     icon: <Truck className="h-8 w-8" />,
     title: "Livraison",
-    description: "Recevez votre commande fraîche à domicile dans les 24h"
-  }
-]
+    description: "Recevez votre commande fraîche à domicile dans les 24h",
+  },
+];
 
 export default function HowItWorks() {
   return (
     <div>
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">
-        Comment ça <span className="text-green-600 dark:text-green-400">fonctionne</span>
+        Comment ça{" "}
+        <span className="text-green-600 dark:text-green-400">fonctionne</span>
       </h2>
-      
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
         {steps.map((step, index) => (
           <motion.div
@@ -52,13 +54,17 @@ export default function HowItWorks() {
                     {index + 1}
                   </div>
                 </div>
-                <h3 className="text-md sm:text-lg md:text-xl font-bold mb-3 text-gray-900 dark:text-white">{step.title}</h3>
-                <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300">{step.description}</p>
+                <h3 className="text-md sm:text-lg md:text-xl font-bold mb-3 text-gray-900 dark:text-white">
+                  {step.title}
+                </h3>
+                <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300">
+                  {step.description}
+                </p>
               </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -8,7 +8,9 @@ export default function CallToActionSection() {
     <section className="max-w-7xl mx-auto sm:px-6 py-6">
       <div className="bg-green-50 dark:bg-slate-800 rounded-xl p-4 sm:p-12">
         <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Vous êtes ?</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Vous êtes ?
+          </h2>
           <p className="text-gray-700 dark:text-slate-300 text-md md:text-lg">
             Choisissez votre profil pour commencer
           </p>
@@ -22,7 +24,9 @@ export default function CallToActionSection() {
             <div className="w-12 sm:w-16 h-12 sm:h-16 bg-green-600 rounded-xl flex items-center justify-center mb-6">
               <ShoppingCart className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Client</h3>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
+              Client
+            </h3>
             <p className="text-slate-600 dark:text-slate-300 mb-6">
               Accédez à un catalogue complet de produits et passez vos commandes
               en toute simplicité
@@ -41,7 +45,8 @@ export default function CallToActionSection() {
                 Paiements sécurisés
               </li>
             </ul>
-            <Button asChild
+            <Button
+              asChild
               className="w-full py-3 bg-green-700 hover:bg-green-800 text-white font-semibold hover:shadow-lg transition"
             >
               <Link href="/register">Créer un compte Client</Link>
@@ -76,7 +81,8 @@ export default function CallToActionSection() {
                 Statistiques de vente
               </li>
             </ul>
-            <Button asChild
+            <Button
+              asChild
               className="w-full py-3 bg-green-700 hover:bg-green-800 text-white font-semibold hover:shadow-lg transition"
             >
               <Link href="/contact">Créer un compte Fournisseur</Link>
