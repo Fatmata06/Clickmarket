@@ -198,7 +198,7 @@ export default function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:w-100 flex flex-col">
+      <SheetContent side="right" className="w-70 sm:w-100 p-3 sm:p-6 flex flex-col">
         <SheetHeader>
           <SheetTitle>Panier ({itemCount} articles)</SheetTitle>
         </SheetHeader>
@@ -298,11 +298,11 @@ export default function CartSheet() {
                 className="w-full text-white bg-green-600 hover:bg-green-700"
                 onClick={() => setShowCheckoutDialog(true)}
               >
-                <ShoppingCart className="h-4 w-4 mr-2" />
+                <ShoppingCart className="h-4 w-4 sm:mr-2" />
                 Commander
               </Button>
 
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2">
                 <Button
                   variant="destructive"
                   className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -310,8 +310,8 @@ export default function CartSheet() {
                     await clearCartItems();
                   }}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Vider le panier
+                  <Trash2 className="h-4 w-4 sm:mr-2" />
+                  Vider panier
                 </Button>
 
                 <SheetClose asChild>
@@ -320,8 +320,8 @@ export default function CartSheet() {
                     asChild
                   >
                     <Link href="/panier">
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                      Voir le panier
+                      <ArrowRight className="h-4 w-4 sm:mr-2" />
+                      Voir panier
                     </Link>
                   </Button>
                 </SheetClose>
