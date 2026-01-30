@@ -116,19 +116,16 @@ export default function FeaturedProducts() {
               </CardContent>
               <CardFooter className="flex gap-2 p-4 pt-0">
                 <Button
-                  className="flex-1 bg-green-600 text-white hover:bg-green-700 hover:text-white dark:bg-green-700 dark:hover:bg-green-600"
+                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                   disabled={!inStock || addingToCart === product._id}
                   onClick={() => handleAddToCart(product._id)}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   {addingToCart === product._id ? "Ajout..." : "Ajouter"}
                 </Button>
-                <Link
-                  href={`/produits/${product._id}`}
-                  className="h-full flex items-center justify-center px-3 rounded-md border border-border text-foreground hover:bg-muted transition"
-                >
-                  Voir
-                </Link>
+                <Button variant="outline" asChild className="px-3">
+                  <Link href={`/produits/${product._id}`}>Voir</Link>
+                </Button>
               </CardFooter>
             </Card>
           </motion.div>

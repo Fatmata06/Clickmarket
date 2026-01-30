@@ -198,7 +198,7 @@ export default function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:h-100 flex flex-col">
+      <SheetContent side="right" className="w-full h-full flex flex-col">
         <SheetHeader>
           <SheetTitle>Panier ({itemCount} articles)</SheetTitle>
         </SheetHeader>
@@ -305,7 +305,7 @@ export default function CartSheet() {
               <div className="flex gap-2">
                 <Button
                   variant="destructive"
-                  className="flex-1 btn-destructive"
+                  className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={async () => {
                     await clearCartItems();
                   }}

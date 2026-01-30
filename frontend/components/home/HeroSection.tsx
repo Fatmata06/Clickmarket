@@ -1,12 +1,32 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ShoppingCart } from "lucide-react";
-// import { Badge } from '@/components/ui/badge'
 import Image from "next/image";
+import { useAuth } from "@/context/auth-context";
+import { toast } from "sonner";
 
 export default function HeroSection() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+
+  const handleCommanderNow = () => {
+    if (!isAuthenticated) {
+      toast.error(
+        "Veuillez d'abord choisir des produits, puis vous connecter pour passer une commande",
+      );
+      router.push("/login");
+      return;
+    }
+    router.push("/panier");
+  };
+
+  const handleVoirProduits = () => {
+    router.push("/produits");
+  };
+
   return (
     <section className="relative overflow-hidden">
       {/* Background Pattern */}
@@ -40,7 +60,8 @@ export default function HeroSection() {
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button
                 size="lg"
-                className="gap-2 px-8 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
+                className="gap-2 px-8 bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={handleCommanderNow}
               >
                 <ShoppingCart className="h-5 w-5" />
                 Commander maintenant
@@ -49,7 +70,8 @@ export default function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 px-8 border-border text-foreground hover:bg-muted"
+                className="gap-2 px-8"
+                onClick={handleVoirProduits}
               >
                 Voir les produits
               </Button>

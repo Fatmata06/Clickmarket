@@ -350,7 +350,7 @@ export default function ProductsGrid({
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          className="btn-primary"
+                          className="btn-primary text-white"
                           disabled={
                             !inStock ||
                             !isActive ||
@@ -416,7 +416,7 @@ export default function ProductsGrid({
                     <span
                       className={`text-sm px-2 py-1 rounded ${
                         inStock
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-primary text-white"
                           : "bg-destructive text-destructive-foreground"
                       }`}
                     >
@@ -532,7 +532,7 @@ export default function ProductsGrid({
                 // Boutons pour clients
                 <>
                   <Button
-                    className="flex-1"
+                    className="flex-1 text-white"
                     disabled={
                       !inStock || !isActive || addingToCart === product._id
                     }
