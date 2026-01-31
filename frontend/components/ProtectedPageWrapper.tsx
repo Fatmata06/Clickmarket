@@ -15,12 +15,12 @@ interface ProtectedPageWrapperProps {
 
 /**
  * Composant de protection pour les pages qui nécessitent une authentification
- * 
+ *
  * Utilisation:
  * <ProtectedPageWrapper requiredRoles={["client", "admin"]}>
  *   <YourPageContent />
  * </ProtectedPageWrapper>
- * 
+ *
  * @param children - Le contenu de la page à protéger
  * @param requiredRoles - Rôles autorisés (optionnel, vide = tous les rôles authentifiés)
  * @param fallbackUrl - URL de redirection si non autorisé (par défaut: /login)

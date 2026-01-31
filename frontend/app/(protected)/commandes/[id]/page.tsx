@@ -561,16 +561,15 @@ function CommandeDetailsContent() {
                         ({historique.modifiePar.role})
                       </p>
                       <p>
-                        {new Date(historique.dateModification).toLocaleDateString(
-                          "fr-FR",
-                          {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        )}
+                        {new Date(
+                          historique.dateModification,
+                        ).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                       {historique.raison && (
                         <p className="italic text-muted-foreground">

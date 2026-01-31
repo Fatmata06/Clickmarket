@@ -360,9 +360,7 @@ export async function updateCommandeAddress(
 /**
  * Récupérer l'historique des changements de statut d'une commande
  */
-export async function getHistoriqueStatuts(
-  id: string,
-): Promise<
+export async function getHistoriqueStatuts(id: string): Promise<
   Array<{
     ancienStatut: string;
     nouveauStatut: string;
@@ -385,12 +383,15 @@ export async function getHistoriqueStatuts(
 
     const { token } = JSON.parse(authData);
 
-    const response = await fetch(`${API_URL}/commandes/${id}/historique-statuts`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const response = await fetch(
+      `${API_URL}/commandes/${id}/historique-statuts`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       handleAuthError(response);

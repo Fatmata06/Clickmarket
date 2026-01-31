@@ -580,16 +580,17 @@ function OrdersPageContent() {
                         <Button variant="outline" size="sm" asChild>
                           <Link href={`/commandes/${order.id}`}>Détails</Link>
                         </Button>
-                        {userRole === "client" && order.status === "en-attente" && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openCancelDialog(order.id)}
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Annuler
-                          </Button>
-                        )}
+                        {userRole === "client" &&
+                          order.status === "en-attente" && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => openCancelDialog(order.id)}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Annuler
+                            </Button>
+                          )}
                       </div>
                     </div>
 
@@ -775,17 +776,18 @@ function OrdersPageContent() {
                               </Button>
                             </>
                           )}
-                          {userRole === "client" && order.status === "en-attente" && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => openCancelDialog(order.id)}
-                              className="h-8 text-xs"
-                            >
-                              <X className="h-3 w-3 mr-1" />
-                              Annuler
-                            </Button>
-                          )}
+                          {userRole === "client" &&
+                            order.status === "en-attente" && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => openCancelDialog(order.id)}
+                                className="h-8 text-xs"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Annuler
+                              </Button>
+                            )}
                           <Button variant="ghost" size="sm" asChild>
                             <Link href={`/commandes/${order.id}`}>Détails</Link>
                           </Button>

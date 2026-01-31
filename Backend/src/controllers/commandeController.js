@@ -202,13 +202,12 @@ exports.mettreAJourStatut = async (req, res) => {
 
     // Seul l'admin peut changer le statut (pas le fournisseur directement)
     // CORRECTION: Le fournisseur peut confirmer et changer le statut
-    if (
-      req.user?.role !== "admin" &&
-      req.user?.role !== "fournisseur"
-    ) {
+    if (req.user?.role !== "admin" && req.user?.role !== "fournisseur") {
       return res
         .status(403)
-        .json({ message: "Seul l'admin ou le fournisseur peut changer le statut" });
+        .json({
+          message: "Seul l'admin ou le fournisseur peut changer le statut",
+        });
     }
 
     // Validation des transitions de statut pour fournisseur
@@ -305,7 +304,8 @@ exports.annulerCommande = async (req, res) => {
       ancienStatut,
       "annulee",
       req.user?.id,
-      req.body.raison || (isOwner ? "Annulation par le client" : "Annulation par admin"),
+      req.body.raison ||
+        (isOwner ? "Annulation par le client" : "Annulation par admin"),
     );
 
     await commande.save();
@@ -334,8 +334,7 @@ exports.modifierAdresseLivraison = async (req, res) => {
     const isOwner = compareUserIds(commande.utilisateur, req.user?.id);
     if (!isOwner) {
       return res.status(403).json({
-        message:
-          "Seul le client peut modifier l'adresse de sa commande",
+        message: "Seul le client peut modifier l'adresse de sa commande",
       });
     }
 

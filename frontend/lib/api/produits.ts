@@ -464,13 +464,16 @@ export async function getProduitsEnAttente(
       throw new Error("Non authentifié");
     }
 
-    const response = await fetch(`${API_URL}/produits/validation/en-attente?${queryParams}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const response = await fetch(
+      `${API_URL}/produits/validation/en-attente?${queryParams}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       if (response.status === 401) {

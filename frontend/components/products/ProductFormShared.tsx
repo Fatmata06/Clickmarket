@@ -191,9 +191,10 @@ export function ProductFormShared({
           .filter((tag) => tag.length > 0),
         images: imageFiles,
         imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
-        ...(userRole === "admin" && mode === "edit" && {
-          statutValidation: formData.statutValidation,
-        }),
+        ...(userRole === "admin" &&
+          mode === "edit" && {
+            statutValidation: formData.statutValidation,
+          }),
       };
 
       if (mode === "create") {

@@ -204,7 +204,10 @@ export default function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-70 sm:w-100 p-3 sm:p-6 flex flex-col">
+      <SheetContent
+        side="right"
+        className="w-70 sm:w-100 p-3 sm:p-6 flex flex-col"
+      >
         <SheetHeader>
           <SheetTitle>Panier ({itemCount} articles)</SheetTitle>
         </SheetHeader>
