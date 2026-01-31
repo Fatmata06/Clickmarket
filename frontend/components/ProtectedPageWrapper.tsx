@@ -56,7 +56,7 @@ export default function ProtectedPageWrapper({
     }
 
     // Vérifier les rôles requis
-    if (requiredRoles.length > 0 && user) {
+    if (requiredRoles.length > 0 && user && user.role) {
       if (!requiredRoles.includes(user.role)) {
         // Rediriger vers la page d'accueil si le rôle n'est pas autorisé
         router.replace("/");
