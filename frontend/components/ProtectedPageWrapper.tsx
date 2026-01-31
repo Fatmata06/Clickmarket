@@ -80,7 +80,12 @@ export default function ProtectedPageWrapper({
   }
 
   // Vérifier les rôles requis
-  if (requiredRoles.length > 0 && user && !requiredRoles.includes(user.role)) {
+  if (
+    requiredRoles.length > 0 &&
+    user &&
+    user.role &&
+    !requiredRoles.includes(user.role)
+  ) {
     return <LoadingSpinner />;
   }
 
