@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ProtectedPageWrapper from "@/components/ProtectedPageWrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,7 +52,7 @@ import {
 import Image from "next/image";
 import { authErrorEvent } from "@/lib/api/commandes";
 
-export default function GestionProduitsPage() {
+function GestionProduitsPageContent() {
   const router = useRouter();
   const [produits, setProduits] = useState<Produit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -620,5 +621,13 @@ export default function GestionProduitsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function GestionProduitsPage() {
+  return (
+    <ProtectedPageWrapper requiredRoles={["fournisseur", "admin"]}>
+      <GestionProduitsPageContent />
+    </ProtectedPageWrapper>
   );
 }

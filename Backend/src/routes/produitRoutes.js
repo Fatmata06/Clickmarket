@@ -10,6 +10,7 @@ const {
   getCategories,
   accepterProduit,
   refuserProduit,
+  getProduitsEnAttente,
 } = require("../controllers/produitController");
 const { uploadProduit } = require("../config/multer");
 const { isRole, auth, optionalAuth } = require("../middleware/auth");
@@ -254,6 +255,67 @@ router.get("/", optionalAuth, getAllProduits);
  *         description: Erreur serveur
  */
 router.get("/categories", getCategories);
+
+/**
+ * @swagger
+ * /api/produits/validation/en-attente:
+ *   get:
+ *     summary: Récupérer les produits en attente de validation
+ *     tags: [Produits]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Récupère la liste des produits en attente de validation (admin seulement). Exclut les produits du TRUSTED_FOURNISSEUR.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: number
+ *           default: 1
+ *         description: Numéro de la page
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           default: 20
+ *         description: Nombre de résultats par page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Recherche par nom de produit
+ *     responses:
+ *       200:
+ *         description: Produits récupérés avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Produit'
+ *                 total:
+ *                   type: number
+ *                 page:
+ *                   type: number
+ *                 pages:
+ *                   type: number
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé - Réservé aux admins
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get(
+  "/validation/en-attente",
+  auth,
+  isRole(["admin"]),
+  getProduitsEnAttente,
+);
 
 // Accepter un produit (Admin uniquement)
 /**

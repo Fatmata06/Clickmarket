@@ -303,6 +303,7 @@ exports.updateProduit = async (req, res) => {
       fournisseur,
       imagesToDelete,
       uniteVente,
+      statutValidation,
     } = req.body;
 
     const produit = await Produit.findById(req.params.id);
@@ -317,6 +318,24 @@ exports.updateProduit = async (req, res) => {
       return res.status(403).json({
         message: "Vous n'êtes pas autorisé à modifier ce produit",
       });
+    }
+
+    // Si un fournisseur modifie son produit, le remettre à "en_attente" pour revalidation
+    // Sauf s'il est admin
+    if (
+      req.user.role === "fournisseur" &&
+      produit.statutValidation === "accepte"
+    ) {
+      produit.statutValidation = "en_attente";
+      produit.raisonRefus = null;
+    }
+
+    // L'admin peut directement définir le statut de validation
+    if (req.user.role === "admin" && statutValidation) {
+      produit.statutValidation = statutValidation;
+      if (statutValidation === "accepte") {
+        produit.raisonRefus = null;
+      }
     }
 
     if (nomProduit !== undefined) produit.nomProduit = nomProduit;
@@ -462,6 +481,61 @@ exports.getCategories = async (req, res) => {
     });
   } catch (error) {
     console.error("Erreur dans getCategories:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Récupérer les produits en attente de validation (Admin uniquement)
+exports.getProduitsEnAttente = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = "" } = req.query;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Filtrer les produits en_attente, SAUF ceux du TRUSTED_FOURNISSEUR
+    const trustedIds = (process.env.TRUSTED_FOURNISSEUR_IDS || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    const filters = {
+      statutValidation: "en_attente",
+      estActif: true,
+    };
+
+    // Exclure les produits du TRUSTED_FOURNISSEUR
+    if (trustedIds.length > 0) {
+      filters.fournisseur = { $nin: trustedIds };
+    }
+
+    // Filtre de recherche
+    if (search) {
+      filters.nomProduit = { $regex: search, $options: "i" };
+    }
+
+    const produits = await Produit.find(filters)
+      .populate("fournisseur", "nomEntreprise email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    const total = await Produit.countDocuments(filters);
+
+    res.status(200).json({
+      success: true,
+      products: produits,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      message: "Produits en attente récupérés avec succès",
+    });
+  } catch (error) {
+    console.error("Erreur dans getProduitsEnAttente:", error);
     res.status(500).json({
       success: false,
       message: error.message,

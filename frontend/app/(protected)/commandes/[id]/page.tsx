@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import ProtectedPageWrapper from "@/components/ProtectedPageWrapper";
 import {
   Card,
   CardContent,
@@ -14,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Breadcrumb from "@/components/breadcrumb";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -38,12 +41,13 @@ import {
 import {
   getCommande,
   cancelCommande,
+  getHistoriqueStatuts,
   type Commande,
 } from "@/lib/api/commandes";
 import { formatFCFA } from "@/lib/utils";
 import { toast } from "sonner";
 
-export default function CommandeDetailsPage() {
+function CommandeDetailsContent() {
   const params = useParams();
   const router = useRouter();
   const commandeId = params.id as string;
@@ -52,6 +56,22 @@ export default function CommandeDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [historiqueStatuts, setHistoriqueStatuts] = useState<
+    Array<{
+      ancienStatut: string;
+      nouveauStatut: string;
+      modifiePar: {
+        _id: string;
+        nom?: string;
+        prenom?: string;
+        email: string;
+        role: string;
+      };
+      dateModification: string;
+      raison?: string;
+    }>
+  >([]);
 
   useEffect(() => {
     loadCommande();
@@ -64,6 +84,14 @@ export default function CommandeDetailsPage() {
       const data = await getCommande(commandeId);
       console.log("Commande chargée:", data);
       setCommande(data);
+
+      // Charger l'historique des statuts
+      try {
+        const historique = await getHistoriqueStatuts(commandeId);
+        setHistoriqueStatuts(historique);
+      } catch (error) {
+        console.error("Erreur lors du chargement de l'historique:", error);
+      }
     } catch (error) {
       console.error("Erreur lors du chargement de la commande:", error);
       toast.error(
@@ -79,9 +107,10 @@ export default function CommandeDetailsPage() {
 
     try {
       setCanceling(true);
-      await cancelCommande(commande._id);
+      await cancelCommande(commande._id, cancelReason);
       toast.success("Commande annulée avec succès");
       setCancelDialogOpen(false);
+      setCancelReason("");
       router.push("/commandes");
     } catch (error) {
       console.error("Erreur lors de l'annulation:", error);
@@ -219,9 +248,7 @@ export default function CommandeDetailsPage() {
     );
   }
 
-  const canCancel =
-    commande.statutCommande === "en_attente" ||
-    commande.statutCommande === "confirmee";
+  const canCancel = commande.statutCommande === "en_attente";
 
   return (
     <div className="page-container-tight stack-6">
@@ -490,23 +517,110 @@ export default function CommandeDetailsPage() {
         </div>
       </div>
 
+      {/* Historique des statuts */}
+      {historiqueStatuts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-green-600" />
+              Historique des statuts
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {historiqueStatuts.map((historique, index) => (
+                <div
+                  key={index}
+                  className="flex gap-4 pb-4 border-b border-border last:border-0 last:pb-0"
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                      {index + 1}
+                    </div>
+                    {index < historiqueStatuts.length - 1 && (
+                      <div className="h-8 w-0.5 bg-border my-1" />
+                    )}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400">
+                        {historique.ancienStatut}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">→</span>
+                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400">
+                        {historique.nouveauStatut}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        Par{" "}
+                        <span className="font-semibold">
+                          {historique.modifiePar.prenom}{" "}
+                          {historique.modifiePar.nom}
+                        </span>{" "}
+                        ({historique.modifiePar.role})
+                      </p>
+                      <p>
+                        {new Date(historique.dateModification).toLocaleDateString(
+                          "fr-FR",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </p>
+                      {historique.raison && (
+                        <p className="italic text-muted-foreground">
+                          Raison: {historique.raison}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Dialogue de confirmation d'annulation */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmer l&apos;annulation</DialogTitle>
+            <DialogTitle>Annuler la commande</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir annuler cette commande ? Cette action est
+              Veuillez indiquer la raison de l&apos;annulation. Cette action est
               irréversible.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancel-reason">
+                Raison de l&apos;annulation (optionnel)
+              </Label>
+              <Textarea
+                id="cancel-reason"
+                placeholder="Ex: Je n'ai plus besoin du produit, j'ai commandé par erreur..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="min-h-20"
+                disabled={canceling}
+              />
+            </div>
+          </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
-              onClick={() => setCancelDialogOpen(false)}
+              onClick={() => {
+                setCancelDialogOpen(false);
+                setCancelReason("");
+              }}
               disabled={canceling}
             >
-              Annuler
+              Garder la commande
             </Button>
             <Button
               variant="destructive"
@@ -520,5 +634,13 @@ export default function CommandeDetailsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function CommandeDetailsPage() {
+  return (
+    <ProtectedPageWrapper requiredRoles={["client", "admin"]}>
+      <CommandeDetailsContent />
+    </ProtectedPageWrapper>
   );
 }

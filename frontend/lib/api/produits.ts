@@ -448,3 +448,43 @@ export async function refuserProduit(
     throw error;
   }
 }
+// Récupérer les produits en attente de validation (Admin uniquement)
+export async function getProduitsEnAttente(
+  params?: GetProduitsParams,
+): Promise<ProduitsResponse> {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("Non authentifié");
+    }
+
+    const response = await fetch(`${API_URL}/produits/validation/en-attente?${queryParams}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleAuthError();
+      }
+      throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération des produits en attente:",
+      error,
+    );
+    throw error;
+  }
+}

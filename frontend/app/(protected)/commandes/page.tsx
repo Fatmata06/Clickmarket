@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ProtectedPageWrapper from "@/components/ProtectedPageWrapper";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -70,7 +71,7 @@ type Order = {
   paymentStatus: "payee" | "en-attente" | "remboursee";
 };
 
-export default function OrdersPage() {
+function OrdersPageContent() {
   const router = useRouter();
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [loading, setLoading] = useState(true);
@@ -575,9 +576,21 @@ export default function OrdersPage() {
                           {formatFCFA(order.totalAmount)}
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/commandes/${order.id}`}>Détails</Link>
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/commandes/${order.id}`}>Détails</Link>
+                        </Button>
+                        {userRole === "client" && order.status === "en-attente" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openCancelDialog(order.id)}
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Annuler
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Actions Admin/Fournisseur */}
@@ -762,6 +775,17 @@ export default function OrdersPage() {
                               </Button>
                             </>
                           )}
+                          {userRole === "client" && order.status === "en-attente" && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => openCancelDialog(order.id)}
+                              className="h-8 text-xs"
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Annuler
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" asChild>
                             <Link href={`/commandes/${order.id}`}>Détails</Link>
                           </Button>
@@ -941,5 +965,13 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <ProtectedPageWrapper requiredRoles={["client", "fournisseur", "admin"]}>
+      <OrdersPageContent />
+    </ProtectedPageWrapper>
   );
 }

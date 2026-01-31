@@ -10,6 +10,7 @@ const {
   ajouterCommentaire,
   getCommentaires,
   getHistorique,
+  getHistoriqueStatuts,
   mettreAJourPaiement,
 } = require("../controllers/commandeController");
 const { auth, isRole } = require("../middleware/auth");
@@ -659,5 +660,67 @@ router.patch(
   isRole(["admin", "fournisseur"]),
   mettreAJourPaiement,
 );
+
+/**
+ * @swagger
+ * /api/commandes/{id}/historique-statuts:
+ *   get:
+ *     summary: Récupérer l'historique des changements de statut
+ *     tags: [Commandes]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Récupère l'historique complet des changements de statut d'une commande pour la traçabilité
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la commande
+ *     responses:
+ *       200:
+ *         description: Historique récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 historiqueStatuts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       ancienStatut:
+ *                         type: string
+ *                       nouveauStatut:
+ *                         type: string
+ *                       modifiePar:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           nom:
+ *                             type: string
+ *                           prenom:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           role:
+ *                             type: string
+ *                       dateModification:
+ *                         type: string
+ *                         format: date-time
+ *                       raison:
+ *                         type: string
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Commande introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get("/:id/historique-statuts", auth, getHistoriqueStatuts);
 
 module.exports = router;

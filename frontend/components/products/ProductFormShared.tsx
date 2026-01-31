@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   createProduit,
@@ -34,6 +35,7 @@ interface ProductFormData {
   uniteNom: string;
   unitePas: string;
   tags: string;
+  statutValidation?: "en_attente" | "accepte" | "refuse";
 }
 
 interface ProductFormSharedProps {
@@ -56,6 +58,7 @@ export function ProductFormShared({
   const [remainingImages, setRemainingImages] = useState(existingImages);
   const [originalImages, setOriginalImages] = useState(existingImages);
   const [removingImageId, setRemovingImageId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
 
   const {
     imageFiles,
@@ -63,6 +66,19 @@ export function ProductFormShared({
     handleImageChange: handleNewImageChange,
     removeImage: removeNewImage,
   } = useImageUpload(5);
+
+  useEffect(() => {
+    // Récupérer le rôle utilisateur
+    const authData = localStorage.getItem("clickmarket_auth");
+    if (authData) {
+      try {
+        const { user } = JSON.parse(authData);
+        setUserRole(user?.role || "");
+      } catch (error) {
+        console.error("Erreur lors de la lecture du rôle utilisateur:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     setRemainingImages(existingImages);
@@ -78,6 +94,7 @@ export function ProductFormShared({
     uniteNom: initialData?.uniteVente?.nom || "kg",
     unitePas: initialData?.uniteVente?.pas?.toString() || "0.25",
     tags: initialData?.tags?.join(", ") || "",
+    statutValidation: initialData?.statutValidation || "en_attente",
   });
 
   const handleInputChange = (
@@ -174,6 +191,9 @@ export function ProductFormShared({
           .filter((tag) => tag.length > 0),
         images: imageFiles,
         imagesToDelete: imagesToDelete.length > 0 ? imagesToDelete : undefined,
+        ...(userRole === "admin" && mode === "edit" && {
+          statutValidation: formData.statutValidation,
+        }),
       };
 
       if (mode === "create") {
@@ -258,7 +278,48 @@ export function ProductFormShared({
               </Select>
             </div>
 
-            {/* Description */}
+            {/* Statut de validation (Admin uniquement) */}
+            {mode === "edit" && userRole === "admin" && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="statutValidation">Statut de validation</Label>
+                  <Badge
+                    className={
+                      formData.statutValidation === "accepte"
+                        ? "bg-green-100 text-green-800"
+                        : formData.statutValidation === "refuse"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-amber-100 text-amber-800"
+                    }
+                  >
+                    {formData.statutValidation === "accepte"
+                      ? "Accepté"
+                      : formData.statutValidation === "refuse"
+                        ? "Refusé"
+                        : "En attente"}
+                  </Badge>
+                </div>
+                <Select
+                  value={formData.statutValidation || "en_attente"}
+                  onValueChange={(value: "en_attente" | "accepte" | "refuse") =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      statutValidation: value,
+                    }))
+                  }
+                  disabled={isLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en_attente">En attente</SelectItem>
+                    <SelectItem value="accepte">Accepté</SelectItem>
+                    <SelectItem value="refuse">Refusé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
               <Textarea

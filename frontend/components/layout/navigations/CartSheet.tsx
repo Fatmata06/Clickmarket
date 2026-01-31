@@ -104,6 +104,12 @@ export default function CartSheet() {
     }
   };
 
+  const handleOpenCheckoutDialog = () => {
+    setDeliveryMode("livraison");
+    setSelectedZone("");
+    setShowCheckoutDialog(true);
+  };
+
   const handleCreateOrder = async () => {
     if (cartItems.length === 0) {
       toast.error("Votre panier est vide");
@@ -296,7 +302,7 @@ export default function CartSheet() {
             <div className="space-y-2">
               <Button
                 className="w-full text-white bg-green-600 hover:bg-green-700"
-                onClick={() => setShowCheckoutDialog(true)}
+                onClick={handleOpenCheckoutDialog}
               >
                 <ShoppingCart className="h-4 w-4 sm:mr-2" />
                 Commander

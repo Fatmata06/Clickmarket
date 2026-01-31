@@ -224,7 +224,7 @@ export async function getCommande(id: string): Promise<Commande> {
 }
 
 /**
- * Annuler une commande (seulement si statut = en_attente ou confirmee)
+ * Annuler une commande (seulement si statut = en_attente)
  */
 export async function cancelCommande(
   id: string,
@@ -238,8 +238,8 @@ export async function cancelCommande(
 
     const { token } = JSON.parse(authData);
 
-    const response = await fetch(`${API_URL}/commandes/${id}`, {
-      method: "DELETE",
+    const response = await fetch(`${API_URL}/commandes/${id}/annuler`, {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -354,6 +354,56 @@ export async function updateCommandeAddress(
     return result;
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'adresse:", error);
+    throw error;
+  }
+}
+/**
+ * Récupérer l'historique des changements de statut d'une commande
+ */
+export async function getHistoriqueStatuts(
+  id: string,
+): Promise<
+  Array<{
+    ancienStatut: string;
+    nouveauStatut: string;
+    modifiePar: {
+      _id: string;
+      nom?: string;
+      prenom?: string;
+      email: string;
+      role: string;
+    };
+    dateModification: string;
+    raison?: string;
+  }>
+> {
+  try {
+    const authData = localStorage.getItem("clickmarket_auth");
+    if (!authData) {
+      throw new Error("Non authentifié");
+    }
+
+    const { token } = JSON.parse(authData);
+
+    const response = await fetch(`${API_URL}/commandes/${id}/historique-statuts`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      handleAuthError(response);
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Erreur serveur" }));
+      throw new Error(errorData.message || `Erreur ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.historiqueStatuts || [];
+  } catch (error) {
+    console.error("Erreur lors de la récupération de l'historique:", error);
     throw error;
   }
 }

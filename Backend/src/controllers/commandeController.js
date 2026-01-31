@@ -200,6 +200,39 @@ exports.mettreAJourStatut = async (req, res) => {
       return res.status(404).json({ message: "Commande introuvable" });
     }
 
+    // Seul l'admin peut changer le statut (pas le fournisseur directement)
+    // CORRECTION: Le fournisseur peut confirmer et changer le statut
+    if (
+      req.user?.role !== "admin" &&
+      req.user?.role !== "fournisseur"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Seul l'admin ou le fournisseur peut changer le statut" });
+    }
+
+    // Validation des transitions de statut pour fournisseur
+    if (req.user?.role === "fournisseur") {
+      // Le fournisseur peut:
+      // en_attente -> confirmee (confirmer la commande)
+      // confirmee -> en_preparation (préparer)
+      // en_preparation -> expediee (expédier)
+      // expediee -> livree (marquer livrée)
+      const transitions = {
+        en_attente: ["confirmee"],
+        confirmee: ["en_preparation"],
+        en_preparation: ["expediee"],
+        expediee: ["livree"],
+      };
+
+      const allowedStatuts = transitions[commande.statutCommande] || [];
+      if (!allowedStatuts.includes(statut)) {
+        return res.status(400).json({
+          message: `Transition non autorisée de ${commande.statutCommande} à ${statut}`,
+        });
+      }
+    }
+
     const ancienStatut = commande.statutCommande;
     commande.statutCommande = statut;
 
@@ -209,15 +242,13 @@ exports.mettreAJourStatut = async (req, res) => {
       commande.paiement.statut = paiementStatut;
     }
 
-    // Ajouter à l'historique avec le bon format
-    if (!commande.historique) {
-      commande.historique = [];
-    }
-    commande.historique.push({
-      champ: "statutCommande",
-      ancienneValeur: ancienStatut,
-      nouvelleValeur: statut,
+    // Enregistrer dans l'historique des statuts avec le nouveau schéma
+    commande.historiqueStatuts = commande.historiqueStatuts || [];
+    commande.historiqueStatuts.push({
+      ancienStatut,
+      nouveauStatut: statut,
       modifiePar: req.user?.id,
+      dateModification: new Date(),
       raison: raison || undefined,
     });
 
@@ -239,16 +270,46 @@ exports.annulerCommande = async (req, res) => {
     const isOwner =
       req.user && compareUserIds(commande.utilisateur, req.user.id);
     const isAdmin = req.user && req.user.role === "admin";
+
+    // Seul le propriétaire ou l'admin peut annuler
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: "Acces refuse" });
     }
 
-    if (["livree", "annulee"].includes(commande.statutCommande)) {
-      return res.status(400).json({ message: "Commande deja finalisee" });
+    // Le client ne peut annuler que si statut = "en_attente"
+    // L'admin peut annuler à tout moment (sauf si déjà finalisée)
+    if (isOwner && !isAdmin && commande.statutCommande !== "en_attente") {
+      return res.status(400).json({
+        message:
+          "Vous ne pouvez annuler une commande que si elle est en attente",
+      });
     }
 
+    // Admin: ne peut pas annuler si déjà livrée
+    if (["livree"].includes(commande.statutCommande)) {
+      return res.status(400).json({
+        message: "Commande deja finalisee",
+      });
+    }
+
+    const ancienStatut = commande.statutCommande;
     commande.statutCommande = "annulee";
+
+    // Mettre à jour le statut de paiement à "annulé" aussi
+    if (commande.paiement) {
+      commande.paiement.statut = "annule";
+    }
+
+    // Enregistrer dans l'historique des statuts
+    await commande.enregistrerChangementStatut(
+      ancienStatut,
+      "annulee",
+      req.user?.id,
+      req.body.raison || (isOwner ? "Annulation par le client" : "Annulation par admin"),
+    );
+
     await commande.save();
+
     res.json({ message: "Commande annulee", commande });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -269,16 +330,20 @@ exports.modifierAdresseLivraison = async (req, res) => {
       return res.status(404).json({ message: "Commande introuvable" });
     }
 
-    // Vérifier que c'est le propriétaire ou un admin
+    // Seul le propriétaire (client) peut modifier l'adresse
     const isOwner = compareUserIds(commande.utilisateur, req.user?.id);
-    if (!isOwner && req.user?.role !== "admin") {
-      return res.status(403).json({ message: "Acces refuse" });
+    if (!isOwner) {
+      return res.status(403).json({
+        message:
+          "Seul le client peut modifier l'adresse de sa commande",
+      });
     }
 
-    // Ne peut modifier que si la commande n'est pas livrée ou annulée
-    if (["livree", "annulee"].includes(commande.statutCommande)) {
+    // Ne peut modifier que si la commande est en attente (pas confirmée)
+    if (commande.statutCommande !== "en_attente") {
       return res.status(400).json({
-        message: "Impossible de modifier l'adresse d'une commande finalisée",
+        message:
+          "Impossible de modifier l'adresse une fois la commande confirmée",
       });
     }
 
@@ -286,14 +351,17 @@ exports.modifierAdresseLivraison = async (req, res) => {
     commande.adresseLivraison = adresseLivraison;
 
     // Enregistrer la modification dans l'historique
-    await commande.enregistrerModification(
-      "adresseLivraison",
-      ancienneAdresse,
-      adresseLivraison,
-      req.user.id,
-      "Modification de l'adresse par le client",
-    );
+    commande.historique = commande.historique || [];
+    commande.historique.push({
+      champ: "adresseLivraison",
+      ancienneValeur: ancienneAdresse,
+      nouvelleValeur: adresseLivraison,
+      modifiePar: req.user.id,
+      dateModification: new Date(),
+      raison: "Modification de l'adresse par le client",
+    });
 
+    await commande.save();
     await commande.populate("articles.produit");
     res.json({
       message: "Adresse de livraison modifiée avec succès",
@@ -362,6 +430,30 @@ exports.getCommentaires = async (req, res) => {
     }
 
     res.json({ commentaires: commande.commentaires });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET /api/commandes/:id/historique-statuts - Récupérer l'historique des changements de statut
+exports.getHistoriqueStatuts = async (req, res) => {
+  try {
+    const commande = await Commande.findById(req.params.id).populate(
+      "historiqueStatuts.modifiePar",
+      "nom prenom email role",
+    );
+
+    if (!commande) {
+      return res.status(404).json({ message: "Commande introuvable" });
+    }
+
+    // Vérifier l'accès
+    const isOwner = compareUserIds(commande.utilisateur, req.user?.id);
+    if (!isOwner && req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Acces refuse" });
+    }
+
+    res.json({ historiqueStatuts: commande.historiqueStatuts || [] });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

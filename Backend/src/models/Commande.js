@@ -31,6 +31,21 @@ const historiqueModificationSchema = new mongoose.Schema(
   { _id: true },
 );
 
+const historiqueStatutSchema = new mongoose.Schema(
+  {
+    ancienStatut: { type: String, required: true },
+    nouveauStatut: { type: String, required: true },
+    modifiePar: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    dateModification: { type: Date, default: Date.now },
+    raison: { type: String, trim: true, maxlength: 200 },
+  },
+  { _id: true },
+);
+
 const commentaireSchema = new mongoose.Schema(
   {
     auteur: {
@@ -110,6 +125,10 @@ const commandeSchema = new mongoose.Schema(
       type: [historiqueModificationSchema],
       default: [],
     },
+    historiqueStatuts: {
+      type: [historiqueStatutSchema],
+      default: [],
+    },
     paiement: {
       statut: {
         type: String,
@@ -157,6 +176,23 @@ commandeSchema.methods.enregistrerModification = function (
     champ,
     ancienneValeur,
     nouvelleValeur,
+    modifiePar,
+    dateModification: new Date(),
+    raison,
+  });
+  return this.save();
+};
+
+// Méthode pour enregistrer un changement de statut dans l'historique
+commandeSchema.methods.enregistrerChangementStatut = function (
+  ancienStatut,
+  nouveauStatut,
+  modifiePar,
+  raison = "",
+) {
+  this.historiqueStatuts.push({
+    ancienStatut,
+    nouveauStatut,
     modifiePar,
     dateModification: new Date(),
     raison,
